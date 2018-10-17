@@ -24,7 +24,6 @@ class BatchSyncProducts {
       $product = \Drupal\commerce_product\Entity\Product::load($product_id);
 
       $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-      $description = (!empty($product->get('body')->value)) ? $product->get('body')->value : '';
       $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
 
       /** @var \Drupal\mailchimp_ecommerce\ProductHandler $product_handler */
@@ -33,6 +32,7 @@ class BatchSyncProducts {
       $url = $product_handler->buildProductUrl($product);
       $variants = $product_handler->buildProductVariants($product);
       $image_url = $product_handler->getProductImageUrl($product);
+      $description = $product_handler->getProductDescription($product);
 
       $product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
 

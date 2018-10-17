@@ -40,13 +40,13 @@ class ProductEventSubscriber implements EventSubscriberInterface {
 
     $product_id = $product->get('product_id')->value;
     $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    $description = (!empty($product->get('body')->value)) ? $product->get('body')->value : '';
     // TODO Fix Type
     $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
 
     $variants = $this->product_handler->buildProductVariants($product);
     $url = $this->product_handler->buildProductUrl($product);
     $image_url = $this->product_handler->getProductImageUrl($product);
+    $description = $this->product_handler->getProductDescription($product);
 
     $this->product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
   }
@@ -58,13 +58,13 @@ class ProductEventSubscriber implements EventSubscriberInterface {
     $product = $event->getProduct();
 
     $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    $description = (!empty($product->get('body')->value)) ? $product->get('body')->value : '';
     // TODO Fix Type
     $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
 
     $variants = $this->product_handler->buildProductVariants($product);
     $url = $this->product_handler->buildProductUrl($product);
     $image_url = $this->product_handler->getProductImageUrl($product);
+    $description = $this->product_handler->getProductDescription($product);
 
     // Update the existing product and variant.
     $this->product_handler->updateProduct($product, $title, $url, $image_url, $description, $type, $variants);

@@ -193,6 +193,44 @@ class ProductHandler implements ProductHandlerInterface {
 
 
   /**
+   * Gets a description from a product as a string
+   *
+   * @return string
+   */
+  public function getProductDescription($product) {
+    $description = '';
+
+    $config = \Drupal::config('mailchimp_ecommerce.settings');
+    $description_field_name = $config->get('description');
+
+    if (isset($product->{$description_field_name}->entity)) {
+      $description = $product->{$description_field_name}->entity->value;
+    }
+
+    return $description;
+  }
+
+
+  /**
+   * Gets a description from a node as a string
+   *
+   * @return string
+   */
+  public function getNodeDescription($product) {
+    $description = '';
+
+    $config = \Drupal::config('mailchimp_ecommerce.settings');
+    $description_field_name = $config->get('description');
+
+    if (isset($product->{$description_field_name}->entity)) {
+      $description = $product->{$description_field_name}->entity->value;
+    }
+
+    return $description;
+  }
+
+
+  /**
    * @inheritdoc
    */
   public function deleteProductVariant($product_id, $product_variant_id) {
@@ -294,6 +332,7 @@ class ProductHandler implements ProductHandlerInterface {
 
     $url = $this->buildNodeUrl($node);
     $image_url = $this->getNodeImageUrl($node);
+    $description = $this->getNodeDescription($node);
 
     $variant = [
       'id' => $node->id(),
@@ -311,7 +350,7 @@ class ProductHandler implements ProductHandlerInterface {
       'title' => $node->getTitle(),
       'url' => $url,
       'image_url' => $image_url,
-      'description' => $node->body->value,
+      'description' => $description,
       'price' => $node->price->value,
       'type' => $node->getType(),
       'variants' => [$variant],

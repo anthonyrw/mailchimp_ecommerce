@@ -128,8 +128,10 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       '#description' => t('This is overridden if you have selected to use the default currency from Commerce.'),
     ];
 
-    $options = ['' => t('-- Select --')];
+    $image_options = ['' => t('-- Select --')];
+    $description_options = ['' => t('-- Select --')];
     $has_images = false;
+    $has_description = false;
     $desired_type = '';
 
     $field_map = \Drupal::entityManager()->getFieldMap();
@@ -149,8 +151,12 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       if ($entity_type == $desired_type) {
         foreach ($fields as $field_name => $field_properties) {
           if ($field_properties['type'] == 'image') {
-            $options[$field_name] = $field_name;
+            $image_options[$field_name] = $field_name;
             $has_images = true;
+          }
+          elseif($field_properties['type'] == 'text' || $field_properties['type'] == 'text_long' || $field_properties['type'] == 'text_summary') {
+            $description_options[$field_name] = $field_name;
+            $has_description = true;
           }
         }
       }
@@ -162,8 +168,20 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
         '#multiple'    => FALSE,
         '#description' => t('Please choose the image field for your products.'),
 
-        '#options'       => $options,
+        '#options'       => $image_options,
         '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('product_image'),
+        '#required'      => TRUE,
+      ];
+    }
+    if ($has_description) {
+      $form['description'] = [
+        '#type'        => 'select',
+        '#title'       => t('Product Description'),
+        '#multiple'    => FALSE,
+        '#description' => t('Please choose the description field for your products.'),
+
+        '#options'       => $description_options,
+        '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('description'),
         '#required'      => TRUE,
       ];
     }
