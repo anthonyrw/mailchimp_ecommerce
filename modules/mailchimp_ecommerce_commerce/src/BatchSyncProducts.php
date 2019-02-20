@@ -17,6 +17,9 @@ class BatchSyncProducts {
     $config = \Drupal::config('mailchimp.settings');
     $batch_limit = $config->get('batch_limit');
 
+    /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
+    $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
+
     $batch = array_slice($context['results']['product_ids'], $context['sandbox']['progress'], $batch_limit);
 
     foreach ($batch as $product_id) {
@@ -31,10 +34,21 @@ class BatchSyncProducts {
 
       $url = $product_handler->buildProductUrl($product);
       $variants = $product_handler->buildProductVariants($product);
-      $image_url = $product_handler->getProductImageUrl($product);
-      $description = $product_handler->getProductDescription($product);
 
-      $product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+      $image_url = $product_handler->getProductImageUrl($product);
+
+      $description = $product_handler->getProductDescription($product);
+      // If description is null, use empty string instead
+      if(empty($description)) { $description = ''; }
+
+      try {
+        $mc_ecommerce->getProduct(mailchimp_ecommerce_get_store_id(), $product_id);
+        $product_handler->updateProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+      } catch(\Exception $e) {
+        if ($e->getCode() == 404) {
+          $product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+        }
+      }
 
       $context['sandbox']['progress']++;
 

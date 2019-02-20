@@ -53,8 +53,12 @@ class BatchSyncOrders {
 
       $order_data = $order_handler->buildOrder($order, $customer);
 
+      if($order_state == 'draft' && empty($order->getItems())){
+        return;
+      }
+
       // Add cart item price to order data.
-      if (!isset($order_data['currency_code'])) {
+      if (!isset($order_data['currency_code']) && !empty($order->getTotalPrice())) {
         $price = $order->getTotalPrice();
 
         $order_data['currency_code'] = $price->getCurrencyCode();
@@ -63,7 +67,7 @@ class BatchSyncOrders {
 
       $cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
 
-      if ($order_state == 'completed') {
+      if ($order_state == 'validation') {
         $cart_handler->deleteCart($order->id());
 
         // Update the customer's total order count and total amount spent.
