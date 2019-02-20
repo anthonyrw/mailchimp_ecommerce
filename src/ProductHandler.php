@@ -50,7 +50,7 @@ class ProductHandler implements ProductHandlerInterface {
       }
 
       // Ubercart doesn't have product objects. So, just pass the ID.
-      if (!is_string($product)) {
+      if (!is_string($product) && !is_int($product)) {
         $product_id = $product->get('product_id')->value;
       }
       else {
@@ -168,10 +168,18 @@ class ProductHandler implements ProductHandlerInterface {
     $config = \Drupal::config('mailchimp_ecommerce.settings');
     $image_field_name = $config->get('product_image');
 
-    if (isset($product->{$image_field_name}->entity)) {
-      $image_url = $product->{$image_field_name}->entity->url();
-    }
+    if($product->getEntityType()->id() == 'commerce_product') {
+      $variation = $product->getDefaultVariation();
 
+      if (isset($variation->{$image_field_name}->entity)) {
+        $image_url = $variation->{$image_field_name}->entity->url();
+      }
+    }
+    else {
+      if (isset($product->{$image_field_name}->entity)) {
+        $image_url = $product->{$image_field_name}->entity->url();
+      }
+    }
     return $image_url;
   }
 
@@ -202,9 +210,11 @@ class ProductHandler implements ProductHandlerInterface {
 
     $config = \Drupal::config('mailchimp_ecommerce.settings');
     $description_field_name = $config->get('description');
-
-    if (isset($product->{$description_field_name}->entity)) {
-      $description = $product->{$description_field_name}->entity->value;
+    if($product->getEntityType()->id() == 'commerce_product') {
+      $variation = $product->getDefaultVariation();
+      if (isset($variation->{$description_field_name})) {
+        $description = $variation->{$description_field_name}->value;
+      }
     }
 
     return $description;

@@ -70,6 +70,9 @@ class CustomerHandler implements CustomerHandlerInterface {
 
       try {
         if (!empty($mc_ecommerce->getCustomer($store_id, $customer['id']))) {
+          // if the customer already exists, remove the email address so we
+          // do not get an exception
+          unset($customer['email_address']);
           $mc_ecommerce->updateCustomer($store_id, $customer);
         }
       }
@@ -170,6 +173,7 @@ class CustomerHandler implements CustomerHandlerInterface {
       }
 
       $customer['address'] = [
+        'name' => $address->getGivenName() . ' ' . $address->getFamilyName(),
         'address1' => $address->getAddressLine1(),
         'address2' => $address->getAddressLine2(),
         'city' => $address->getLocality(),

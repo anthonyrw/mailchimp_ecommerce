@@ -4,6 +4,7 @@ namespace Drupal\mailchimp_ecommerce;
 
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
+use Drupal\address\Plugin\Field\FieldType\AddressItem;
 
 /**
  * Order handler.
@@ -46,6 +47,11 @@ class OrderHandler implements OrderHandlerInterface {
         // A user not existing in the store's Mailchimp list is not an error, so
         // don't throw an exception.
         return;
+      }
+      else {
+        // If the customer already exists, we need to remove the email_address
+        // so that we don't get an exception
+        unset($customer['email_address']);
       }
 
       // Get the Mailchimp campaign ID, if available.
@@ -112,17 +118,88 @@ class OrderHandler implements OrderHandlerInterface {
       'lines' => $lines,
     ];
 
-    if(isset($customer['address'])) {
-      $order_data['billing_address'] = $customer['address'];
+//    $order_state = $order->get('state')->value;
+//
+//    switch ($order_state) {
+//      case 'validation':
+//        $order_data['financial_status'] = 'pending';
+//        break;
+//      case 'fulfillment':
+//        break;
+//      case 'completed':
+//        $order_data['financial_status'] = 'paid';
+//        $order_data['fulfillment_status'] = 'shipped';
+//        break;
+//      case 'canceled':
+//        $order_data['financial_status'] = 'cancelled';
+//        break;
+//      default:
+//        break;
+//    }
+
+    if(!empty($order->getBillingProfile())) {
+      $order_data['billing_address'] = $this->translateAddress($order->getBillingProfile());
     }
 
+    if( $order->hasField('shipments') && !$order->get('shipments')->isEmpty() ) {
+      $shipment = $order->get('shipments')->referencedEntities()[0];
+      $order_data['shipping_address'] = $this->translateAddress($shipment->getShippingProfile());
+    }
 
     if (!empty($order->getTotalPrice())) {
       $order_data['currency_code'] = $order->getTotalPrice()->getCurrencyCode();
       $order_data['order_total'] = $order->getTotalPrice()->getNumber();
     }
 
+    if(!empty($order->getAdjustments())) {
+      $promo = [];
+      $tax_total = 0;
+      $shipping_total = 0;
+      $discount_total = 0;
+      foreach ($order->getAdjustments() as $adjustment) {
+        switch ($adjustment->getType()) {
+          case 'tax':
+            $tax_total += floatval($adjustment->getAmount()->getNumber());
+            break;
+          case 'shipping':
+            $shipping_total += floatval($adjustment->getAmount()->getNumber());
+            break;
+          case 'promotion':
+            $discount_total += floatval($adjustment->getAmount()->getNumber());
+            $promo[] = $adjustment;
+            break;
+          default: break;
+        }
+      }
+      foreach ($order->getItems() as $order_item) {
+        foreach($order_item->getAdjustments() as $adjustment) {
+          switch ($adjustment->getType()) {
+            case 'tax':
+              $tax_total += floatval($adjustment->getAmount()->getNumber());
+              break;
+            case 'shipping':
+              $shipping_total += floatval($adjustment->getAmount()->getNumber());
+              break;
+            case 'promotion':
+              $discount_total += floatval($adjustment->getAmount()->getNumber());
+              $promo[] = $adjustment;
+              break;
+            default: break;
+          }
+        }
+      }
+      $order_data['tax_total'] = strval($tax_total);
+      $order_data['shipping_total'] = strval($shipping_total);
+      $order_data['discount_total'] = strval($discount_total);
+      if(!empty($promo)) {
+        // @TODO process promotions into promo array
+      }
+    }
+//    \Drupal::logger('mc_order_handler')->notice('<pre><code>'.
+//      dpm($order_data)
+//      .'</code></pre>');
     return $order_data;
+
   }
 
   /**
@@ -228,5 +305,73 @@ class OrderHandler implements OrderHandlerInterface {
     }
 
     return ['customer' => $customer, 'order_data' => $order_data];
+  }
+
+  // CUSTOM ORDER HANDLER FUNCTIONS
+
+  /**
+   * Accepts a Profile as input and converts into an array that can be used by
+   * the Mailchimp API for billing and shipping addresses
+   *
+   * @param \Drupal\profile\Entity\ProfileInterface $profile
+   * @return array $address
+   */
+  private function translateAddress($profile) {
+    try {
+      /** @var AddressItem $address */
+      $address = $profile->get('address')->first();
+      $mc_address = [];
+      if(!empty($address->getGivenName()) && !empty($address->getFamilyName())){
+        $mc_address['name'] = ($address->getGivenName() . ' ' . $address->getFamilyName());
+      }
+      if(!empty($address->getAddressLine1())){
+        $mc_address['address1'] = $address->getAddressLine1();
+      }
+      if(!empty($address->getAddressLine2())){
+        $mc_address['address2'] = $address->getAddressLine2();
+      }
+      if(!empty($address->getLocality())){
+        $mc_address['city'] = $address->getLocality();
+      }
+      if(!empty($address->getAdministrativeArea())){
+        $mc_address['province_code'] = $address->getAdministrativeArea();
+      }
+      if(!empty($address->getPostalCode())){
+        $mc_address['postal_code'] = $address->getPostalCode();
+      }
+      if(!empty($address->getCountryCode())){
+        $mc_address['country_code'] = $address->getCountryCode();
+      }
+      if(!empty($address->getOrganization())){
+        $mc_address['company'] = $address->getOrganization();
+      }
+      $phone = $this->getTelephone($profile);
+      if(!empty($phone)){
+        $mc_address['phone'] = $phone;
+      }
+      return $mc_address;
+    } catch (\Exception $e) {
+      \Drupal::logger('mailchimp_ecommerce')
+        ->error('Attempt to translate profile into mailchimp array failed: ' . $e->getMessage());
+    }
+  }
+
+
+  /**
+   * @param \Drupal\commerce_promotion\Entity\PromotionInterface $promotion
+   */
+  private function translatePromotion($promotion) {
+  }
+
+  /**
+   * @param $profile
+   *
+   * @return null|string
+   */
+  private function getTelephone($profile) {
+    $telephone = NULL;
+    $field = \Drupal::config('mailchimp_ecommerce.settings')->get('telephone');
+    $telephone = strval($profile->get($field)->value);
+    return $telephone;
   }
 }

@@ -64,6 +64,14 @@ class CartHandler implements CartHandlerInterface {
         // don't throw an exception.
         return;
       }
+      else {
+        // "carts for existing customers should only include the id parameter in
+        // the customer object body"
+        // @see https://developer.mailchimp.com/documentation/mailchimp/reference/ecommerce/stores/carts/
+        $customer = [
+          'id' => $customer['id'],
+        ];
+      }
 
       // Get the Mailchimp campaign ID, if available.
       $campaign_id = mailchimp_ecommerce_get_campaign_id();
