@@ -128,6 +128,12 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       '#description' => t('This is overridden if you have selected to use the default currency from Commerce.'),
     ];
 
+    $form['configurable_fields'] = [
+      '#type'   => 'fieldset',
+      '#title'  => t('Configurable fields'),
+      '#description' => t('Non-standard fields that should be sent to Mailchimp'),
+    ];
+
     $image_options = ['' => t('-- Select --')];
     $description_options = ['' => t('-- Select --')];
     $telephone_options = ['' => t('-- Select --')];
@@ -139,7 +145,19 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
     $field_map = \Drupal::entityManager()->getFieldMap();
     $moduleHandler = \Drupal::service('module_handler');
     if ($moduleHandler->moduleExists('mailchimp_ecommerce_commerce')) {
-      $desired_type = 'commerce_product_variation';
+      $form['configurable_fields']['commerce_entity_type'] = [
+        '#type'        => 'select',
+        '#title'       => t('Commerce Entity Type'),
+        '#multiple'    => FALSE,
+        '#description' => t('Please choose whether to pull item info from the Product or Product Variation'),
+        '#options'       => [
+          'commerce_product' => 'commerce_product',
+          'commerce_product_variation' => 'commerce_product_variation',
+        ],
+        '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('commerce_entity_type'),
+        '#required'      => TRUE,
+      ];
+      $desired_type = \Drupal::config('mailchimp_ecommerce.settings')->get('commerce_entity_type');
     }
     elseif ($moduleHandler->moduleExists('mailchimp_ecommerce_ubercart')) {
       $desired_type = 'node';
@@ -171,11 +189,7 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
         }
       }
     }
-    $form['configurable_fields'] = [
-      '#type'   => 'fieldset',
-      '#title'  => t('Configurable fields'),
-      '#description' => t('Non-standard fields that should be sent to Mailchimp'),
-    ];
+
     if ($has_images) {
       $form['configurable_fields']['product_image'] = [
         '#type'        => 'select',
@@ -184,7 +198,7 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
         '#description' => t('Please choose the image field for your products.'),
         '#options'       => $image_options,
         '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('product_image'),
-        '#required'      => TRUE,
+        '#required'      => FALSE,
       ];
     }
     if ($has_description) {
@@ -195,7 +209,7 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
         '#description' => t('Please choose the description field for your products.'),
         '#options'       => $description_options,
         '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('description'),
-        '#required'      => TRUE,
+        '#required'      => FALSE,
       ];
     }
     if($has_telephone) {
@@ -279,6 +293,7 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       ->set('product_image', $form_state->getValue('product_image'))
       ->set('description', $form_state->getValue('description'))
       ->set('telephone', $form_state->getValue('telephone'))
+      ->set('commerce_entity_type', $form_state->getValue('commerce_entity_type'))
       ->save();
 
   }
