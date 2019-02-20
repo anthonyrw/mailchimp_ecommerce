@@ -130,14 +130,16 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
 
     $image_options = ['' => t('-- Select --')];
     $description_options = ['' => t('-- Select --')];
+    $telephone_options = ['' => t('-- Select --')];
     $has_images = false;
     $has_description = false;
+    $has_telephone = false;
     $desired_type = '';
 
     $field_map = \Drupal::entityManager()->getFieldMap();
     $moduleHandler = \Drupal::service('module_handler');
     if ($moduleHandler->moduleExists('mailchimp_ecommerce_commerce')) {
-      $desired_type = 'commerce_product';
+      $desired_type = 'commerce_product_variation';
     }
     elseif ($moduleHandler->moduleExists('mailchimp_ecommerce_ubercart')) {
       $desired_type = 'node';
@@ -160,29 +162,50 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
           }
         }
       }
+      elseif ($entity_type == 'profile') {
+        foreach ($fields as $field_name => $field_properties) {
+          if ($field_properties['type'] == 'telephone') {
+            $telephone_options[$field_name] = $field_name;
+            $has_telephone = true;
+          }
+        }
+      }
     }
+    $form['configurable_fields'] = [
+      '#type'   => 'fieldset',
+      '#title'  => t('Configurable fields'),
+      '#description' => t('Non-standard fields that should be sent to Mailchimp'),
+    ];
     if ($has_images) {
-      $form['product_image'] = [
+      $form['configurable_fields']['product_image'] = [
         '#type'        => 'select',
         '#title'       => t('Product Image'),
         '#multiple'    => FALSE,
         '#description' => t('Please choose the image field for your products.'),
-
         '#options'       => $image_options,
         '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('product_image'),
         '#required'      => TRUE,
       ];
     }
     if ($has_description) {
-      $form['description'] = [
+      $form['configurable_fields']['description'] = [
         '#type'        => 'select',
         '#title'       => t('Product Description'),
         '#multiple'    => FALSE,
         '#description' => t('Please choose the description field for your products.'),
-
         '#options'       => $description_options,
         '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('description'),
         '#required'      => TRUE,
+      ];
+    }
+    if($has_telephone) {
+      $form['configurable_fields']['telephone'] = [
+        '#type'        => 'select',
+        '#title'       => t('Order Telephone Number'),
+        '#multiple'    => FALSE,
+        '#description' => t('Please choose the telephone number field for an order.'),
+        '#options'       => $telephone_options,
+        '#default_value' => \Drupal::config('mailchimp_ecommerce.settings')->get('telephone'),
       ];
     }
 
@@ -202,6 +225,14 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       ];
       $form['sync-orders']['orders'] = [
         '#markup' => \Drupal::l(t('Sync existing orders to Mailchimp'), Url::fromRoute('mailchimp_ecommerce.sync_orders')),
+      ];
+      $form['sync-promotions'] = [
+        '#type' => 'fieldset',
+        '#title' => t('Promotion sync'),
+        '#collapsible' => FALSE,
+      ];
+      $form['sync-promotions']['promotions'] = [
+        '#markup' => \Drupal::l(t('Sync existing promotions to Mailchimp'), Url::fromRoute('mailchimp_ecommerce.sync_promotions')),
       ];
     }
 
@@ -243,6 +274,12 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
         $this->store_handler->updateStore($store_id, $form_state->getValue(['mailchimp_ecommerce_store_name']), $currency, $platform);
       }
     }
+
+    \Drupal::configFactory()->getEditable('mailchimp_ecommerce.settings')
+      ->set('product_image', $form_state->getValue('product_image'))
+      ->set('description', $form_state->getValue('description'))
+      ->set('telephone', $form_state->getValue('telephone'))
+      ->save();
 
   }
 

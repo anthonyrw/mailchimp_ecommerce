@@ -15,6 +15,9 @@ services:
   mailchimp_ecommerce.store_handler:
     class: '\Drupal\mailchimp_ecommerce\StoreHandler'
 
+  mailchimp_ecommerce.promo_handler:
+    class: '\Drupal\mailchimp_ecommerce\PromoHandler'
+
   mailchimp_ecommerce.database:
     class: Drupal\Core\Database\Connection
     factory: Drupal\Core\Database\Database::getConnection

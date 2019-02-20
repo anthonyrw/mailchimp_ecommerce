@@ -24,3 +24,12 @@ mailchimp_ecommerce.sync_orders:
   requirements:
     _permission: 'administer mailchimp'
     _mailchimp_configuration_access_check: 'TRUE'
+
+mailchimp_ecommerce.sync_promotions:
+  path: 'admin/config/services/mailchimp/ecommerce/sync-promotions'
+  defaults:
+    _title: 'Mailchimp eCommerce Promotion Sync'
+    _form: '\Drupal\mailchimp_ecommerce\Form\MailchimpEcommerceSyncPromotions'
+  requirements:
+    _permission: 'administer mailchimp'
+    _mailchimp_configuration_access_check: 'TRUE'
