@@ -5,6 +5,8 @@ namespace Drupal\mailchimp_ecommerce;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
+use Drupal\commerce_promotion\Entity\Coupon;
+use Drupal\mailchimp_ecommerce\PromoHandler;
 
 /**
  * Order handler.
@@ -118,25 +120,6 @@ class OrderHandler implements OrderHandlerInterface {
       'lines' => $lines,
     ];
 
-//    $order_state = $order->get('state')->value;
-//
-//    switch ($order_state) {
-//      case 'validation':
-//        $order_data['financial_status'] = 'pending';
-//        break;
-//      case 'fulfillment':
-//        break;
-//      case 'completed':
-//        $order_data['financial_status'] = 'paid';
-//        $order_data['fulfillment_status'] = 'shipped';
-//        break;
-//      case 'canceled':
-//        $order_data['financial_status'] = 'cancelled';
-//        break;
-//      default:
-//        break;
-//    }
-
     if(!empty($order->getBillingProfile())) {
       $order_data['billing_address'] = $this->translateAddress($order->getBillingProfile());
     }
@@ -152,7 +135,7 @@ class OrderHandler implements OrderHandlerInterface {
     }
 
     if(!empty($order->getAdjustments())) {
-      $promo = [];
+      $adjustments = [];
       $tax_total = 0;
       $shipping_total = 0;
       $discount_total = 0;
@@ -166,7 +149,8 @@ class OrderHandler implements OrderHandlerInterface {
             break;
           case 'promotion':
             $discount_total += floatval($adjustment->getAmount()->getNumber());
-            $promo[] = $adjustment;
+            $adjustments[$adjustment->getSourceId()] = $adjustment;
+            \Drupal::logger('mc_order_promo')->notice($adjustment->getLabel() .' '. $adjustment->getSourceId());
             break;
           default: break;
         }
@@ -182,7 +166,7 @@ class OrderHandler implements OrderHandlerInterface {
               break;
             case 'promotion':
               $discount_total += floatval($adjustment->getAmount()->getNumber());
-              $promo[] = $adjustment;
+              $adjustments[$adjustment->getSourceId()] = $adjustment;
               break;
             default: break;
           }
@@ -191,15 +175,20 @@ class OrderHandler implements OrderHandlerInterface {
       $order_data['tax_total'] = strval($tax_total);
       $order_data['shipping_total'] = strval($shipping_total);
       $order_data['discount_total'] = strval($discount_total);
-      if(!empty($promo)) {
-        // @TODO process promotions into promo array
+
+      foreach ($order->get('coupons') as $coupon) {
+        $coupon_id = $coupon->get('target_id')->getCastedValue();
+        $promotion_id = Coupon::load($coupon_id)->getPromotionId();
+        $promo_handler = new PromoHandler();
+        $order_data['promos'][] = [
+          'code' => $promo_handler->getPromoCode($promotion_id, $coupon_id)->code,
+          'amount_discounted' => $adjustments[$promotion_id]->getAmount()->getNumber(),
+          'type' => $promo_handler->getPromoRule($promotion_id)->type,
+        ];
       }
     }
-//    \Drupal::logger('mc_order_handler')->notice('<pre><code>'.
-//      dpm($order_data)
-//      .'</code></pre>');
-    return $order_data;
 
+    return $order_data;
   }
 
   /**
@@ -354,13 +343,6 @@ class OrderHandler implements OrderHandlerInterface {
       \Drupal::logger('mailchimp_ecommerce')
         ->error('Attempt to translate profile into mailchimp array failed: ' . $e->getMessage());
     }
-  }
-
-
-  /**
-   * @param \Drupal\commerce_promotion\Entity\PromotionInterface $promotion
-   */
-  private function translatePromotion($promotion) {
   }
 
   /**
