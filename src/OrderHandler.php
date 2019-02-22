@@ -116,7 +116,7 @@ class OrderHandler implements OrderHandlerInterface {
 
     $order_data = [
       'customer' => $customer,
-      'processed_at_foreign' => date('c'),
+      'updated_at_foreign' => date('c'),
       'lines' => $lines,
     ];
 

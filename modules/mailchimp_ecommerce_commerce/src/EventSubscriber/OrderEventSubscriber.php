@@ -108,23 +108,29 @@ class OrderEventSubscriber implements EventSubscriberInterface {
 
     // When the order has been placed, replace cart in Mailchimp with order.
     $order_state = $order->get('state')->value;
-    if($order_state == 'validation' || $order_state == 'fulfillment' || $order_state == 'completed' || $order_state == 'canceled') {
+    if($order_state != 'draft') {
       if (empty($order->get('field_mailchimp_order_id')->getValue())) {
         // Order has not been synced with Mailchimp, it should be completed now.
-        $this->firstCartToOrder($order);
+        $this->firstTimeOrderSync($order);
         $order->set('field_mailchimp_order_id', $order->id());
+        $order->save();
       }
       else {
-        // Order exists in Mailchimp. We should only update it.
+        // Order exists in Mailchimp. We should update it.
         $order_data['id'] = $order->id();
         if ($order_state == 'validation' || $order_state == 'fulfillment') {
-
+          // while in validation and fulfillment states, make sure all order
+          // items in Drupal match order lines in Mailchimp.
+          $customer['email'] = $order->getCustomer()->getEmail();
+          $customer = $this->customer_handler->buildCustomer($customer, $order->getBillingProfile());
+          $order_data = $this->order_handler->buildOrder($order, $customer);
         }
         elseif ($order_state == 'completed') {
-          $order_data['financial_status'] = 'paid';
+          $order_data['processed_at_foreign'] = date('c');
           $order_data['fulfillment_status'] = 'shipped';
         }
         elseif ($order_state == 'canceled') {
+          $order_data['cancelled_at_foreign'] = date('c');
           $order_data['financial_status'] = 'cancelled';
         }
         $this->order_handler->updateOrder($order->id(), $order_data);
@@ -133,11 +139,23 @@ class OrderEventSubscriber implements EventSubscriberInterface {
   }
 
   /**
+   * Fires once when order balance reaches zero.
+   *
+   * @param \Drupal\commerce_order\Event\OrderEvent $event
+   */
+  public function orderPaid(OrderEvent $event) {
+    $order = $event->getOrder();
+    $order_data['id'] = $order->id();
+    $order_data['financial_status'] = 'paid';
+    $this->order_handler->updateOrder($order->id(), $order_data);
+  }
+
+  /**
    * First time cart to order set up.
    *
    * @param \Drupal\commerce_order\Entity\Order $order
    */
-  private function firstCartToOrder(Order $order) {
+  private function firstTimeOrderSync(Order $order) {
     $customer = [];
     try {
       $this->cart_handler->deleteCart($order->id());
@@ -166,24 +184,6 @@ class OrderEventSubscriber implements EventSubscriberInterface {
     } catch(\Exception $e) {
       mailchimp_ecommerce_log_error_message('There was an error trying to create order ' . $order->id());
     }
-  }
-
-  /**
-   * Respond to event fired after updating an order item in a placed order
-   *
-   * @param \Drupal\commerce_order\Event\OrderItemEvent $event
-   */
-  public function orderItemUpdate(OrderItemEvent $event) {
-
-  }
-
-  /**
-   * Respond to event fired after inserting an order item into a placed order
-   *
-   * @param \Drupal\commerce_order\Event\OrderItemEvent $event
-   */
-  public function orderItemInsert(OrderItemEvent $event) {
-
   }
 
   /**
@@ -229,10 +229,7 @@ class OrderEventSubscriber implements EventSubscriberInterface {
   public static function getSubscribedEvents() {
     $events[OrderEvents::ORDER_UPDATE][] = ['orderUpdate'];
     $events[OrderEvents::ORDER_ASSIGN][] = ['orderAssign'];
-
-    // handle modifications to orders after they have been placed
-    $events[OrderEvents::ORDER_ITEM_INSERT][] = ['orderItemInsert'];
-    $events[OrderEvents::ORDER_ITEM_UPDATE][] = ['orderItemUpdate'];
+    $events[OrderEvents::ORDER_PAID][] = ['orderPaid'];
 
     return $events;
   }
