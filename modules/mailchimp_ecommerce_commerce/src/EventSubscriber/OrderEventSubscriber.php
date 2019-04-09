@@ -79,7 +79,7 @@ class OrderEventSubscriber implements EventSubscriberInterface {
     // Handle guest orders at the checkout review step - first time the user's
     // email address is available.
     if (empty($order->getCustomer()->id()) && ($order->get('checkout_step')->value == 'review')) {
-      $customer['email_address'] = $event->getOrder()->getEmail();
+      $customer['email_address'] = $order->getEmail();
       if (!empty($customer['email_address'])) {
         $billing_profile = $order->getBillingProfile();
         $customer = $this->customer_handler->buildCustomer($customer, $billing_profile);
@@ -121,7 +121,7 @@ class OrderEventSubscriber implements EventSubscriberInterface {
         if ($order_state == 'validation' || $order_state == 'fulfillment') {
           // while in validation and fulfillment states, make sure all order
           // items in Drupal match order lines in Mailchimp.
-          $customer['email'] = $order->getCustomer()->getEmail();
+          $customer['email_address'] = $order->getEmail();
           $customer = $this->customer_handler->buildCustomer($customer, $order->getBillingProfile());
           $order_data = $this->order_handler->buildOrder($order, $customer);
         }

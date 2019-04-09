@@ -5,6 +5,7 @@ namespace Drupal\mailchimp_ecommerce;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_promotion\Entity\Coupon;
 use Drupal\mailchimp_ecommerce\PromoHandler;
 
@@ -50,11 +51,11 @@ class OrderHandler implements OrderHandlerInterface {
         // don't throw an exception.
         return;
       }
-      else {
-        // If the customer already exists, we need to remove the email_address
-        // so that we don't get an exception
-        unset($customer['email_address']);
-      }
+//      else {
+//        // If the customer already exists, we need to remove the email_address
+//        // so that we don't get an exception
+//        unset($customer['email_address']);
+//      }
 
       // Get the Mailchimp campaign ID, if available.
       $campaign_id = mailchimp_ecommerce_get_campaign_id();
