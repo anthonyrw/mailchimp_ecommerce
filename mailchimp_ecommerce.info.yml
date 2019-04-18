@@ -1,5 +1,5 @@
 name: 'Mailchimp eCommerce'
-description: 'Integrates Drupal-based shopping carts with Mailchimp eCommerce.'
+description: 'Integrates Drupal-based shopping carts with Mailchimp eCommerce. Custom.'
 package: Mailchimp
 core: 8.x
 php: '5.5'

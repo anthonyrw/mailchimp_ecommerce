@@ -1,5 +1,5 @@
 name: 'Mailchimp eCommerce Commerce'
-description: 'Integrates Drupal Commerce with Mailchimp eCommerce.'
+description: 'Integrates Drupal Commerce with Mailchimp eCommerce. Custom.'
 package: Mailchimp
 core: 8.x
 dependencies:
