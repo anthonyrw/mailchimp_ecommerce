@@ -6,6 +6,7 @@ use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
 use Drupal\commerce_order\Entity\OrderItemInterface;
+use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_promotion\Entity\Coupon;
 use Drupal\mailchimp_ecommerce\PromoHandler;
 
@@ -105,7 +106,7 @@ class OrderHandler implements OrderHandlerInterface {
     foreach ($order_items as $order_item) {
       $line = [
         'id' => $order_item->id(),
-        'product_id' => $order_item->getPurchasedEntity()->getProductId(),
+        'product_id' => ProductVariation::load($order_item->getPurchasedEntityId())->getProductId(),
         // TODO: Figure out how to differentiate between product and variant ID here.
         'product_variant_id' => $order_item->getPurchasedEntityId(),
         'quantity' => (int) $order_item->getQuantity(),
@@ -199,7 +200,7 @@ class OrderHandler implements OrderHandlerInterface {
 
     $product = [
       'id' => $order_item->id(),
-      'product_id' => $order_item->getPurchasedEntity()->getProductId(),
+      'product_id' => ProductVariation::load($order_item->getPurchasedEntityId())->getProductId(),
       // TODO: Figure out how to differentiate between product and variant ID here.
       'product_variant_id' => $order_item->getPurchasedEntityId(),
       'quantity' => (int) $order_item->getQuantity(),

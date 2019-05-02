@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
+namespace Drupal\mailchimp_ecommerce_promo_code\EventSubscriber;
 
 use Drupal\commerce_promotion\Entity\Coupon;
 use Drupal\commerce_promotion\Entity\Promotion;

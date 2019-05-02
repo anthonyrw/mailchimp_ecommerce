@@ -240,14 +240,6 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
       $form['sync-orders']['orders'] = [
         '#markup' => \Drupal::l(t('Sync existing orders to Mailchimp'), Url::fromRoute('mailchimp_ecommerce.sync_orders')),
       ];
-      $form['sync-promotions'] = [
-        '#type' => 'fieldset',
-        '#title' => t('Promotion sync'),
-        '#collapsible' => FALSE,
-      ];
-      $form['sync-promotions']['promotions'] = [
-        '#markup' => \Drupal::l(t('Sync existing promotions to Mailchimp'), Url::fromRoute('mailchimp_ecommerce.sync_promotions')),
-      ];
     }
 
     $form['platform'] = [

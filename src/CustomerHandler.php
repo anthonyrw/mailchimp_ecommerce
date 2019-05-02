@@ -81,9 +81,7 @@ class CustomerHandler implements CustomerHandlerInterface {
       }
       catch (\Exception $e) {
         if ($e->getCode() == 404) {
-//          $customer['email_address'] = $email;
           // Customer doesn't exist; add a new customer.
-          \Drupal::logger('add or update customer')->notice('test '.$e->getMessage());
           $mc_ecommerce->addCustomer($store_id, $customer);
         }
         else {
@@ -122,7 +120,6 @@ class CustomerHandler implements CustomerHandlerInterface {
    */
   public function loadCustomerId($email) {
     $customer = [];
-
     // Load an existing customer using the email.
     $query = $this->database->select('mailchimp_ecommerce_customer', 'c')
       ->fields('c', ['mailchimp_customer_id'])
@@ -136,9 +133,13 @@ class CustomerHandler implements CustomerHandlerInterface {
 
     // Create a new customer if no customer is attached to the order.
     if (empty($customer_id)) {
-      $customer_id = $result = $this->database->insert('mailchimp_ecommerce_customer')
-        ->fields(['mail' => $email])
-        ->execute();
+      try {
+        $customer_id = $result = $this->database->insert('mailchimp_ecommerce_customer')
+          ->fields(['mail' => $email])
+          ->execute();
+      } catch (\Exception $e) {
+        \Drupal::logger('mailchimp_customer_handler')->error('CustomerHandler failed when attempting to add to the mailchimp_ecommerce_customer table. ' . $e->getMessage());
+      }
     }
 
     return $customer_id;

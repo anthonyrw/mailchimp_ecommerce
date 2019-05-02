@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\mailchimp_ecommerce_commerce;
+namespace Drupal\mailchimp_ecommerce_promo_code;
 
 use Drupal\commerce_promotion\Entity\Promotion;
 

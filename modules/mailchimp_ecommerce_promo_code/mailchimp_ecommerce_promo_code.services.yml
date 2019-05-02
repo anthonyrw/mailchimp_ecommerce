@@ -1,0 +1,6 @@
+services:
+  mailchimp_ecommerce_promo_code.promotion_event_subscriber:
+    class: '\Drupal\mailchimp_ecommerce_promo_code\EventSubscriber\PromotionEventSubscriber'
+    arguments: ['@mailchimp_ecommerce.promo_handler']
+    tags:
+      - { name: event_subscriber }
