@@ -3,11 +3,11 @@ description: 'Integrates Drupal Commerce with Mailchimp eCommerce. Custom.'
 package: Mailchimp
 core: 8.x
 dependencies:
-  - commerce
-  - commerce_cart
-  - commerce_checkout
-  - commerce_order
-  - commerce_price
-  - commerce_product
-  - mailchimp_ecommerce
+  - commerce:commerce
+  - commerce:commerce_cart
+  - commerce:commerce_checkout
+  - commerce:commerce_order
+  - commerce:commerce_price
+  - commerce:commerce_product
+  - mailchimp_ecommerce:mailchimp_ecommerce
 type: module
