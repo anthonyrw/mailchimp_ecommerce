@@ -21,7 +21,13 @@
     "issues": "https://www.drupal.org/project/issues/mailchimp_ecommerce",
     "source": "http://cgit.drupalcode.org/mailchimp_ecommerce"
   },
+  "repositories": {
+    "satis": {
+      "type": "composer",
+      "url": "https://satis.cmog.org"
+    }
+  },
   "require": {
-    "drupal/mailchimp": "^1.0"
+    "cmog/mailchimp": "^1.0"
   }
 }
