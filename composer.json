@@ -1,5 +1,5 @@
 {
-  "name": "cmog/mailchimp_ecommerce_custom",
+  "name": "cmog/mailchimp_ecommerce",
   "description": "Add E-Commerce functionality with Mailchimp email service.",
   "type": "drupal-module",
   "license": "GPL-2.0+",
