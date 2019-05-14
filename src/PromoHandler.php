@@ -85,12 +85,13 @@ class PromoHandler implements PromoHandlerInterface {
     $promo_rule['title'] = $promotion->getName();
     $promo_rule['description'] = !empty($promotion->getDescription()) ? $promotion->getDescription() : ""; // required
     $promo_rule['starts_at'] = !empty($promotion->getStartDate()) ? $promotion->getStartDate()->format('c') : "";
-    $promo_rule['ends_at'] = !empty($promotion->getEndDate()) ? $promotion->getEndDate()->format('c') : "2030-01-01T00:00:00+00:00";
+    $promo_rule['ends_at'] = $promotion->getEndDate()->format('c') == "0000-00-00 00:00:00" ? "2030-01-01T00:00:00+00:00" : $promotion->getEndDate()->format('c');
     $promo_rule['enabled'] = $promotion->isEnabled();
     $promo_rule['updated_at_foreign'] = date('c');
 
     $offer = $promotion->getOffer();
     $offer_config = $offer->getConfiguration();
+//    \Drupal::logger('mc')->notice('<pre>' . $promotion->getName() . '<code>'. print_r($offer->getConfiguration(), true) . '</code></pre>');
 
     if(array_key_exists('amount', $offer_config)) {
       $promo_rule['type'] = 'fixed'; // required
@@ -100,7 +101,7 @@ class PromoHandler implements PromoHandlerInterface {
       $promo_rule['type'] = 'percentage'; // required
       $promo_rule['amount'] = $offer_config['percentage']; // required
     }
-    // TODO figure out how to make this work with shipping promotions patch
+    // TODO figure out how to make this work with shipping promotions
     else {
       $promo_rule['type'] = 'fixed';
       $promo_rule['amount'] = 0;
@@ -115,6 +116,7 @@ class PromoHandler implements PromoHandlerInterface {
     else {
       $promo_rule['target'] = 'shipping';
     }
+//    \Drupal::logger('mc_promo_rule')->notice('<pre>' . $promotion->getName() . ' <code>'. print_r($promo_rule, true) . '</code></pre>');
     return $promo_rule;
   }
 

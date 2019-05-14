@@ -21,3 +21,9 @@ services:
     arguments: ['@mailchimp_ecommerce.product_handler']
     tags:
       - { name: event_subscriber }
+
+  mailchimp_ecommerce_commerce.promotion_event_subscriber:
+    class: '\Drupal\mailchimp_ecommerce_commerce\EventSubscriber\PromotionEventSubscriber'
+    arguments: ['@mailchimp_ecommerce.promo_handler']
+    tags:
+      - { name: event_subscriber }

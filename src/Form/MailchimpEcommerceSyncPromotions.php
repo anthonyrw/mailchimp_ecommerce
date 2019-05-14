@@ -1,11 +1,11 @@
 <?php
 
-namespace Drupal\mailchimp_ecommerce_promo_code\Form;
+namespace Drupal\mailchimp_ecommerce\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class MailchimpEcommercePromoCodeSyncPromotions extends FormBase {
+abstract class MailchimpEcommerceSyncPromotions extends FormBase {
 
   /**
    * {@inheritdoc}
@@ -47,26 +47,6 @@ class MailchimpEcommercePromoCodeSyncPromotions extends FormBase {
    * You should implement this function in your integration to process the
    * data sync.
    */
-  public function _submitForm($form, $form_state) {
-    if (!empty($form_state->getValue('sync_promotions'))) {
-      $batch = [
-        'title' => t('Adding promotions to Mailchimp'),
-        'operations' => [],
-      ];
+  abstract public function _submitForm($form, $form_state);
 
-      $query = \Drupal::entityQuery('commerce_promotion');
-      $result = $query->execute();
-
-      if (!empty($result)) {
-        $promo_rule_ids = array_keys($result);
-
-        $batch['operations'][] = [
-          '\Drupal\mailchimp_ecommerce_promo_code\BatchSyncPromotions::syncPromotions',
-          [$promo_rule_ids],
-        ];
-      }
-
-      batch_set($batch);
-    }
-  }
 }

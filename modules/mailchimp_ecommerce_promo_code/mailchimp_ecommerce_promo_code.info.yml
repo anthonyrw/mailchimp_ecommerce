@@ -1,8 +1,0 @@
-name: 'Mailchimp eCommerce Promo Code'
-description: 'Integrates Drupal Commerce Promotions with Mailchimp Promo Codes.'
-package: Mailchimp
-core: 8.x
-dependencies:
-  - commerce:commerce_promotion
-  - mailchimp_ecommerce:mailchimp_ecommerce_commerce
-type: module

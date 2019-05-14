@@ -1,8 +1,0 @@
-mailchimp_ecommerce.sync_promotions:
-  path: 'admin/config/services/mailchimp/ecommerce/sync-promotions'
-  defaults:
-    _title: 'Mailchimp eCommerce Promotion Sync'
-    _form: '\Drupal\mailchimp_ecommerce_promo_code\Form\MailchimpEcommercePromoCodeSyncPromotions'
-  requirements:
-    _permission: 'administer mailchimp'
-    _mailchimp_configuration_access_check: 'TRUE'

@@ -59,7 +59,6 @@ class BatchSyncOrders {
 
       // Add cart item price to order data.
       if (!isset($order_data['currency_code']) && !empty($order->getTotalPrice())) {
-        /** @var \Drupal\commerce_price\Price $price */
         $price = $order->getTotalPrice();
 
         $order_data['currency_code'] = $price->getCurrencyCode();
