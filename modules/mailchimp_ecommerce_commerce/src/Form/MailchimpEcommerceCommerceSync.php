@@ -19,7 +19,7 @@ class MailchimpEcommerceCommerceSync extends MailchimpEcommerceSync {
    * {@inheritdoc}
    */
   public function _submitForm($form, $form_state) {
-    if (!empty($form_state->getValue('sync-products'))) {
+    if (!empty($form_state->getValue('sync_products'))) {
       $batch = [
         'title' => t('Adding products to Mailchimp'),
         'operations' => [],
@@ -36,9 +36,9 @@ class MailchimpEcommerceCommerceSync extends MailchimpEcommerceSync {
           [$product_ids],
         ];
       }
-
       batch_set($batch);
     }
+
   }
 
 }
