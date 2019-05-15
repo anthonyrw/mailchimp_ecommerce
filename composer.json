@@ -28,6 +28,6 @@
     }
   },
   "require": {
-    "cmog/mailchimp": "^1.0"
+    "cmog/mailchimp": "*"
   }
 }
