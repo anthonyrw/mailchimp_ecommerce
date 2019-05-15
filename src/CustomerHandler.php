@@ -68,22 +68,19 @@ class CustomerHandler implements CustomerHandlerInterface {
       /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
       $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
 
-//      $email = $customer['email_address'];
+      $email = $customer['email_address'];
 
       try {
         if (!empty($mc_ecommerce->getCustomer($store_id, $customer['id']))) {
-          // if the customer already exists, remove the email address so we
-          // do not get an exception
-//          unset($customer['email_address']);
-
+          // if the customer already exists, remove the email address so we don't get an exception
+          unset($customer['email_address']);
           $mc_ecommerce->updateCustomer($store_id, $customer);
         }
       }
       catch (\Exception $e) {
         if ($e->getCode() == 404) {
-//          $customer['email_address'] = $email;
+          $customer['email_address'] = $email;
           // Customer doesn't exist; add a new customer.
-          \Drupal::logger('add or update customer')->notice('test '.$e->getMessage());
           $mc_ecommerce->addCustomer($store_id, $customer);
         }
         else {

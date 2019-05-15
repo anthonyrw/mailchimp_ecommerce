@@ -67,7 +67,7 @@ class BatchSyncOrders {
 
       $cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
 
-      if ($order_state == 'validation') {
+      if ($order_state == 'validation' || $order_state == 'fulfillment' || $order_state == 'completed') {
         $cart_handler->deleteCart($order->id());
 
         // Update the customer's total order count and total amount spent.

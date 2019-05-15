@@ -85,7 +85,7 @@ class PromoHandler implements PromoHandlerInterface {
     $promo_rule['title'] = $promotion->getName();
     $promo_rule['description'] = !empty($promotion->getDescription()) ? $promotion->getDescription() : ""; // required
     $promo_rule['starts_at'] = !empty($promotion->getStartDate()) ? $promotion->getStartDate()->format('c') : "";
-    $promo_rule['ends_at'] = $promotion->getEndDate()->format('c') == "0000-00-00 00:00:00" ? "2030-01-01T00:00:00+00:00" : $promotion->getEndDate()->format('c');
+    $promo_rule['ends_at'] = !empty($promotion->getEndDate()) ? $promotion->getEndDate()->format('c') : "2030-01-01T00:00:00+00:00";
     $promo_rule['enabled'] = $promotion->isEnabled();
     $promo_rule['updated_at_foreign'] = date('c');
 
