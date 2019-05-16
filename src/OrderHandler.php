@@ -30,11 +30,15 @@ class OrderHandler implements OrderHandlerInterface {
       return $order;
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to get order: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      if($e->getCode() == 404) {
+        return NULL;
+      }
+      else {
+        mailchimp_ecommerce_log_error_message('Unable to get order: ' . $e->getMessage());
+        drupal_set_message($e->getMessage(), 'error');
+        return NULL;
+      }
     }
-
-    return NULL;
   }
 
   /**
@@ -47,18 +51,11 @@ class OrderHandler implements OrderHandlerInterface {
         throw new \Exception('Cannot add an order without a store ID.');
       }
       if (!mailchimp_ecommerce_validate_customer($customer)) {
-        // A user not existing in the store's Mailchimp list is not an error, so
-        // don't throw an exception.
-//        return;
+        // A user not existing in the store's Mailchimp list is not an error, so don't throw an exception.
         /** @var \Drupal\mailchimp_ecommerce\CustomerHandler $customer_handler */
         $customer_handler = \Drupal::service('mailchimp_ecommerce.customer_handler');
         $customer_handler->addOrUpdateCustomer($customer);
       }
-//      else {
-//        // If the customer already exists, we need to remove the email_address
-//        // so that we don't get an exception
-//        unset($customer['email_address']);
-//      }
 
       // Get the Mailchimp campaign ID, if available.
       $campaign_id = mailchimp_ecommerce_get_campaign_id();
