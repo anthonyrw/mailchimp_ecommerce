@@ -39,7 +39,7 @@ class BatchSyncProducts {
 
       $description = $product_handler->getProductDescription($product);
       // If description is null, use empty string instead
-      if(empty($description)) { $description = ''; }
+      $description = empty($description) ? '' : $description;
 
       try {
         $mc_ecommerce->getProduct(mailchimp_ecommerce_get_store_id(), $product_id);
@@ -59,6 +59,21 @@ class BatchSyncProducts {
 
       $context['finished'] = ($context['sandbox']['progress'] / $context['sandbox']['total']);
     }
+  }
+
+  public static function deleteProducts() {
+    /** @var \Drupal\mailchimp_ecommerce\ProductHandler $product_handler */
+    $product_handler = \Drupal::service('mailchimp_ecommerce.product_handler');
+    $product_ids = $product_handler->getProductIds();
+
+    foreach ($product_ids as $product_id) {
+      try {
+        $product_handler->deleteProduct($product_id);
+      } catch (\Exception $e) {
+        \Drupal::logger('mailchimp_ecommerce')->error($e->getMessage());
+      }
+    }
+
   }
 
 }

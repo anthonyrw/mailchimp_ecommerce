@@ -49,7 +49,10 @@ class OrderHandler implements OrderHandlerInterface {
       if (!mailchimp_ecommerce_validate_customer($customer)) {
         // A user not existing in the store's Mailchimp list is not an error, so
         // don't throw an exception.
-        return;
+//        return;
+        /** @var \Drupal\mailchimp_ecommerce\CustomerHandler $customer_handler */
+        $customer_handler = \Drupal::service('mailchimp_ecommerce.customer_handler');
+        $customer_handler->addOrUpdateCustomer($customer);
       }
 //      else {
 //        // If the customer already exists, we need to remove the email_address

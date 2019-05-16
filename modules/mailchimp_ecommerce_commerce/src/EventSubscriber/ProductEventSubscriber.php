@@ -75,7 +75,9 @@ class ProductEventSubscriber implements EventSubscriberInterface {
    * Respond to event fired after deleting a product.
    */
   public function productDelete(ProductEvent $event) {
-    // TODO: Process deleted product.
+    $product = $event->getProduct();
+    $product_id = $product->get('product_id')->value;
+    $this->product_handler->deleteProduct($product_id);
   }
 
   /**
