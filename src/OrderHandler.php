@@ -50,11 +50,12 @@ class OrderHandler implements OrderHandlerInterface {
       if (empty($store_id)) {
         throw new \Exception('Cannot add an order without a store ID.');
       }
-      if (!mailchimp_ecommerce_validate_customer($customer)) {
+      if (mailchimp_ecommerce_validate_customer($customer)) {
         // A user not existing in the store's Mailchimp list is not an error, so don't throw an exception.
-        /** @var \Drupal\mailchimp_ecommerce\CustomerHandler $customer_handler */
-        $customer_handler = \Drupal::service('mailchimp_ecommerce.customer_handler');
-        $customer_handler->addOrUpdateCustomer($customer);
+//        /** @var \Drupal\mailchimp_ecommerce\CustomerHandler $customer_handler */
+//        $customer_handler = \Drupal::service('mailchimp_ecommerce.customer_handler');
+//        $customer_handler->addOrUpdateCustomer($customer);
+        unset($customer['email_address']);
       }
 
       // Get the Mailchimp campaign ID, if available.
@@ -83,14 +84,27 @@ class OrderHandler implements OrderHandlerInterface {
       if (empty($store_id)) {
         throw new \Exception('Cannot update an order without a store ID.');
       }
+      $customer = $order['customer'];
+      if (mailchimp_ecommerce_validate_customer($customer)) {
+        unset($order['customer']['email_address']);
+      }
 
       /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
       $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
       $mc_ecommerce->updateOrder($store_id, $order_id, $order);
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to update an order: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      if($e->getCode() == 404) {
+        try {
+          $this->addOrder($order_id, $order['customer'], $order);
+        } catch(\Exception $e) {
+          mailchimp_ecommerce_log_error_message('Order update failed; attempted to create order instead. This also failed. '. $e->getMessage());
+        }
+      }
+      else {
+        mailchimp_ecommerce_log_error_message('Unable to update an order: ' . $e->getMessage());
+        drupal_set_message($e->getMessage(), 'error');
+      }
     }
   }
 
@@ -140,52 +154,38 @@ class OrderHandler implements OrderHandlerInterface {
       $tax_total = 0;
       $shipping_total = 0;
       $discount_total = 0;
-      foreach ($order->getAdjustments() as $adjustment) {
-        switch ($adjustment->getType()) {
-          case 'tax':
-            $tax_total += floatval($adjustment->getAmount()->getNumber());
-            break;
-          case 'shipping':
-            $shipping_total += floatval($adjustment->getAmount()->getNumber());
-            break;
-          case 'promotion':
-            $discount_total += floatval($adjustment->getAmount()->getNumber());
-            $adjustments[$adjustment->getSourceId()] = $adjustment;
-            \Drupal::logger('mc_order_promo')->notice($adjustment->getLabel() .' '. $adjustment->getSourceId());
-            break;
-          default: break;
-        }
+
+      /** @var \Drupal\commerce_order\Adjustment $adjustment */
+      foreach ($order->collectAdjustments(['tax']) as $adjustment) {
+        $tax_total += floatval($adjustment->getAmount()->getNumber());
       }
-      foreach ($order->getItems() as $order_item) {
-        foreach($order_item->getAdjustments() as $adjustment) {
-          switch ($adjustment->getType()) {
-            case 'tax':
-              $tax_total += floatval($adjustment->getAmount()->getNumber());
-              break;
-            case 'shipping':
-              $shipping_total += floatval($adjustment->getAmount()->getNumber());
-              break;
-            case 'promotion':
-              $discount_total += floatval($adjustment->getAmount()->getNumber());
-              $adjustments[$adjustment->getSourceId()] = $adjustment;
-              break;
-            default: break;
-          }
-        }
+      foreach ($order->collectAdjustments(['shipping']) as $adjustment) {
+        $shipping_total += floatval($adjustment->getAmount()->getNumber());
       }
+      foreach ($order->collectAdjustments(['promotion', 'shipping_promotion']) as $adjustment) {
+        $discount_total += floatval($adjustment->getAmount()->getNumber());
+        $adjustments[$adjustment->getSourceId()] = $adjustment->getAmount()->getNumber();
+      }
+
       $order_data['tax_total'] = strval($tax_total);
       $order_data['shipping_total'] = strval($shipping_total);
       $order_data['discount_total'] = strval($discount_total);
 
       foreach ($order->get('coupons') as $coupon) {
-        $coupon_id = $coupon->get('target_id')->getCastedValue();
-        $promotion_id = Coupon::load($coupon_id)->getPromotionId();
-        $promo_handler = new PromoHandler();
-        $order_data['promos'][] = [
-          'code' => $promo_handler->getPromoCode($promotion_id, $coupon_id)->code,
-          'amount_discounted' => $adjustments[$promotion_id]->getAmount()->getNumber(),
-          'type' => $promo_handler->getPromoRule($promotion_id)->type,
-        ];
+        if( !empty($adjustments) ) {
+          try {
+            $coupon_id = $coupon->get('target_id')->getCastedValue();
+            $promotion_id = Coupon::load($coupon_id)->getPromotionId();
+            $promo_handler = new PromoHandler();
+            $order_data['promos'][] = [
+              'code' => $promo_handler->getPromoCode($promotion_id, $coupon_id)->code,
+              'amount_discounted' => $adjustments[$promotion_id],
+              'type' => $promo_handler->getPromoRule($promotion_id)->type,
+            ];
+          } catch (\Exception $e) {
+            mailchimp_ecommerce_log_error_message('A promotion was not properly synced to Mailchimp. ' . $e->getMessage());
+          }
+        }
       }
     }
 
@@ -231,7 +231,7 @@ class OrderHandler implements OrderHandlerInterface {
         'city' => $billing_address->getCity(),
         'province_code' => $billing_address->getZone(),
         'postal_code' => $billing_address->getPostalCode(),
-        'country_code' => $billing_address->getCountry()
+        'country_code' => $billing_address->getCountry(),
       ];
     }
     foreach ($mc_billing_address as $key => $value) {
