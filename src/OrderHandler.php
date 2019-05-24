@@ -82,9 +82,10 @@ class OrderHandler implements OrderHandlerInterface {
       if (empty($store_id)) {
         throw new \Exception('Cannot update an order without a store ID.');
       }
-      $customer = $order['customer'];
-      if (mailchimp_ecommerce_validate_customer($customer)) {
-        unset($order['customer']['email_address']);
+      if (!empty($order['customer'])) {
+        if (mailchimp_ecommerce_validate_customer($order['customer'])) {
+          unset($order['customer']['email_address']);
+        }
       }
 
       /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
