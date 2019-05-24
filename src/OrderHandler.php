@@ -7,6 +7,7 @@ use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
 use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_promotion\Entity\Coupon;
+use Drupal\commerce_promotion\Entity\Promotion;
 use Drupal\mailchimp_ecommerce\PromoHandler;
 
 /**
@@ -52,9 +53,6 @@ class OrderHandler implements OrderHandlerInterface {
       }
       if (mailchimp_ecommerce_validate_customer($customer)) {
         // A user not existing in the store's Mailchimp list is not an error, so don't throw an exception.
-//        /** @var \Drupal\mailchimp_ecommerce\CustomerHandler $customer_handler */
-//        $customer_handler = \Drupal::service('mailchimp_ecommerce.customer_handler');
-//        $customer_handler->addOrUpdateCustomer($customer);
         unset($customer['email_address']);
       }
 
@@ -112,11 +110,31 @@ class OrderHandler implements OrderHandlerInterface {
    * @inheritdoc
    */
   public function buildOrder(Order $order, array $customer) {
-    $order_items = $order->getItems();
-    $lines = [];
+    $order_data = [
+      'customer' => $customer,
+      'updated_at_foreign' => date('c'),
+      'lines' => $this->getOrderLines($order),
+      'billing_address' => $this->getBillingAddress($order),
+      'shipping_address' => $this->getShippingAddress($order),
+      'tax_total' => $this->getTotalTaxAmount($order),
+      'currency_code' => $order->getTotalPrice()->getCurrencyCode(),
+      'order_total' => $order->getTotalPrice()->getNumber(),
+      'shipping_total' => $this->getTotalShippingAmount($order),
+      'discount_total' => $this->getTotalPromotionAmount($order),
+      'promos' => array_merge($this->getPromotions($order), $this->getShippingPromotions($order)),
+    ];
 
-    /** @var OrderItem $order_item */
-    foreach ($order_items as $order_item) {
+    return $order_data;
+  }
+
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return array
+   */
+  private function getOrderLines(Order $order) {
+    $lines = [];
+    foreach ($order->getItems() as $order_item) {
       $line = [
         'id' => $order_item->id(),
         'product_id' => $order_item->getPurchasedEntity()->getProductId(),
@@ -125,71 +143,146 @@ class OrderHandler implements OrderHandlerInterface {
         'quantity' => (int) $order_item->getQuantity(),
         'price' => $order_item->getUnitPrice()->getNumber(),
       ];
-
       $lines[] = $line;
     }
+    return $lines;
+  }
 
-    $order_data = [
-      'customer' => $customer,
-      'updated_at_foreign' => date('c'),
-      'lines' => $lines,
-    ];
-
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return array
+   */
+  private function getBillingAddress(Order $order) {
     if(!empty($order->getBillingProfile())) {
-      $order_data['billing_address'] = $this->translateAddress($order->getBillingProfile());
+      return $this->translateAddress($order->getBillingProfile());
     }
+  }
 
+  /**
+   * @param $order
+   *
+   * @return array
+   */
+  private function getShippingAddress(Order $order) {
     if( $order->hasField('shipments') && !$order->get('shipments')->isEmpty() ) {
       $shipment = $order->get('shipments')->referencedEntities()[0];
-      $order_data['shipping_address'] = $this->translateAddress($shipment->getShippingProfile());
+      return $this->translateAddress($shipment->getShippingProfile());
     }
+  }
 
-    if (!empty($order->getTotalPrice())) {
-      $order_data['currency_code'] = $order->getTotalPrice()->getCurrencyCode();
-      $order_data['order_total'] = $order->getTotalPrice()->getNumber();
-    }
-
-    if(!empty($order->getAdjustments())) {
-      $adjustments = [];
-      $tax_total = 0;
-      $shipping_total = 0;
-      $discount_total = 0;
-
-      /** @var \Drupal\commerce_order\Adjustment $adjustment */
-      foreach ($order->collectAdjustments(['tax']) as $adjustment) {
-        $tax_total += floatval($adjustment->getAmount()->getNumber());
+  /**
+   * @param Order $order
+   * @return array
+   */
+  private function getPromotions(Order $order) {
+    $adjustment_amount = [];
+    $promos = [];
+    $adjustments = $order->collectAdjustments(['promotion']);
+    if(!empty($adjustments)) {
+      foreach($adjustments as $adjustment) {
+        $adjustment_amount[$adjustment->getSourceId()] = $adjustment->getAmount()->getNumber();
       }
-      foreach ($order->collectAdjustments(['shipping']) as $adjustment) {
-        $shipping_total += floatval($adjustment->getAmount()->getNumber());
-      }
-      foreach ($order->collectAdjustments(['promotion', 'shipping_promotion']) as $adjustment) {
-        $discount_total += floatval($adjustment->getAmount()->getNumber());
-        $adjustments[$adjustment->getSourceId()] = $adjustment->getAmount()->getNumber();
-      }
-
-      $order_data['tax_total'] = strval($tax_total);
-      $order_data['shipping_total'] = strval($shipping_total);
-      $order_data['discount_total'] = strval($discount_total);
-
       foreach ($order->get('coupons') as $coupon) {
-        if( !empty($adjustments) ) {
-          try {
-            $coupon_id = $coupon->get('target_id')->getCastedValue();
-            $promotion_id = Coupon::load($coupon_id)->getPromotionId();
+        try {
+          $coupon_id = $coupon->get('target_id')->getCastedValue();
+          $promotion_id = Coupon::load($coupon_id)->getPromotionId();
+          if( array_key_exists($promotion_id, $adjustment_amount) ) {
             $promo_handler = new PromoHandler();
-            $order_data['promos'][] = [
+            $promos[] = [
               'code' => $promo_handler->getPromoCode($promotion_id, $coupon_id)->code,
-              'amount_discounted' => $adjustments[$promotion_id],
+              'amount_discounted' => $adjustment_amount[$promotion_id],
               'type' => $promo_handler->getPromoRule($promotion_id)->type,
             ];
-          } catch (\Exception $e) {
-            mailchimp_ecommerce_log_error_message('A promotion was not properly synced to Mailchimp. ' . $e->getMessage());
           }
+        } catch (\Exception $e) {
+          mailchimp_ecommerce_log_error_message('A promotion was not properly synced to Mailchimp. ' . $e->getMessage());
         }
       }
     }
+    return $promos;
+  }
 
-    return $order_data;
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return array
+   */
+  private function getShippingPromotions(Order $order) {
+    $shipping_discount_total = floatval($this->getTotalShippingAmount($order)) * -1;
+    $promos = [];
+
+    foreach ($order->get('coupons') as $coupon) {
+      try {
+        $coupon_id = $coupon->get('target_id')->getCastedValue();
+        /** @var \Drupal\commerce_promotion\Entity\Coupon $coupon */
+        $coupon = Coupon::load($coupon_id);
+        $promotion_id = $coupon->getPromotionId();
+        /** @var \Drupal\commerce_promotion\Entity\Promotion $promotion */
+        $promotion = Promotion::load($promotion_id);
+        /** @var string $promotion_plugin */
+        $promotion_plugin = $promotion->getOffer()->getPluginId();
+
+        if($promotion_plugin == 'order_free_shipping') {
+          $promo_handler = new PromoHandler();
+          $promos[] = [
+            'code' => $promo_handler->getPromoCode($promotion_id, $coupon_id)->code,
+            'amount_discounted' => strval($shipping_discount_total),
+            'type' => $promo_handler->getPromoRule($promotion_id)->type,
+          ];
+        }
+      } catch (\Exception $e) {
+        mailchimp_ecommerce_log_error_message('A promotion was not properly synced to Mailchimp. ' . $e->getMessage());
+      }
+    }
+
+    return $promos;
+  }
+
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return string
+   */
+  private function getTotalTaxAmount(Order $order) {
+    $tax_total = 0;
+
+    /** @var \Drupal\commerce_order\Adjustment $adjustment */
+    foreach ($order->collectAdjustments(['tax']) as $adjustment) {
+      $tax_total += floatval($adjustment->getAmount()->getNumber());
+    }
+
+    return strval($tax_total);
+  }
+
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return string
+   */
+  private function getTotalShippingAmount(Order $order) {
+    $shipping_total = 0;
+
+    foreach ($order->collectAdjustments(['shipping']) as $adjustment) {
+      $shipping_total += floatval($adjustment->getAmount()->getNumber());
+    }
+
+    return strval($shipping_total);
+  }
+
+  /**
+   * @param \Drupal\commerce_order\Entity\Order $order
+   *
+   * @return string
+   */
+  private function getTotalPromotionAmount(Order $order) {
+    $discount_total = 0;
+
+    foreach ($order->collectAdjustments(['promotion', 'shipping_promotion']) as $adjustment) {
+      $discount_total += floatval($adjustment->getAmount()->getNumber());
+    }
+
+    return strval($discount_total);
   }
 
   /**
