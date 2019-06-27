@@ -93,10 +93,10 @@ function mailchimp_ecommerce_validate_customer(array $customer) {
 }
 
 /**
- * Get the List ID being used.
+ * Get the List/Audience ID being used.
  *
  * @return string
- *   The List ID.
+ *   The List/Audience ID.
  */
 function mailchimp_ecommerce_get_list_id() {
   return \Drupal::config('mailchimp_ecommerce.settings')->get('mailchimp_ecommerce_list_id');

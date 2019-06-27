@@ -38,7 +38,7 @@ function drush_mailchimp_ecommerce_mc_ecommerce_get_stores() {
     foreach ($stores->stores as $store) {
       drush_print("ID:        " . $store->id);
       drush_print("Name:      " . $store->name);
-      drush_print("List ID:   " . $store->list_id);
+      drush_print("Audience ID:   " . $store->list_id);
       drush_print("Platform:  " . $store->platform);
       drush_print("");
     }

@@ -51,11 +51,17 @@ class OrderHandler implements OrderHandlerInterface {
       if (empty($store_id)) {
         throw new \Exception('Cannot add an order without a store ID.');
       }
-      if (mailchimp_ecommerce_validate_customer($customer)) {
-        // A user not existing in the store's Mailchimp list is not an error, so don't throw an exception.
-        unset($customer['email_address']);
+      if (!mailchimp_ecommerce_validate_customer($customer)) {
+        // the customer should be synced before the order. If the customer cannot be validated
+        // do not add the order to Mailchimp
+        // A user not existing in the store's Mailchimp list/audience is not an error, so
+        // don't throw an exception.
+        return;
       }
-
+      // Mailchimp API will automatically try to update customer with the order add event,
+      // we must unset the email address or else the customer update will fail
+      unset($customer['email_address']);
+      
       // Get the Mailchimp campaign ID, if available.
       $campaign_id = mailchimp_ecommerce_get_campaign_id();
       if (!empty($campaign_id)) {

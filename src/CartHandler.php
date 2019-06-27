@@ -60,7 +60,7 @@ class CartHandler implements CartHandlerInterface {
         throw new \Exception('Cannot add a cart without a store ID.');
       }
       if (!mailchimp_ecommerce_validate_customer($customer)) {
-        // A user not existing in the store's Mailchimp list is not an error, so
+        // A user not existing in the store's Mailchimp list/audience is not an error, so
         // don't throw an exception.
         return;
       }

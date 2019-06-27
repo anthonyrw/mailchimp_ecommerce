@@ -100,7 +100,7 @@ class MailchimpEcommerceCommerceTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Tests adding a store to Mailchimp with no list.
+   * Tests adding a store to Mailchimp with no list/audience.
    */
   public function testAddStoreNoList() {
     $admin = $this->drupalCreateUser(array('administer site configuration', 'administer mailchimp'));
@@ -115,7 +115,7 @@ class MailchimpEcommerceCommerceTestCase extends DrupalWebTestCase {
     $this->drupalPost('admin/config/services/mailchimp/ecommerce', $edit, t('Save configuration'));
 
     $this->assertNoText(t('The configuration options have been saved.'), 'The text "The configuration options have been saved." should not appear on the page that adds a store.');
-    $this->assertText(t('Store List field is required.'), 'The text "Store List field is required." should appear on the page, indicating a form validation error.');
+    $this->assertText(t('Store Audience field is required.'), 'The text "Store Audience field is required." should appear on the page, indicating a form validation error.');
   }
 
   /**
