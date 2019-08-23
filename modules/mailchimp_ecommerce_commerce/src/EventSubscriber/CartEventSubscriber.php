@@ -81,7 +81,7 @@ class CartEventSubscriber implements EventSubscriberInterface {
 
       $product = $this->order_handler->buildProduct($order_item);
 
-      $this->cart_handler->addCartLine($order->id(), $order_item->id(), $product);
+      $this->cart_handler->updateCartLine($order->id(), $order_item->id(), $product);
     }
     else {
       // Create a new cart.
