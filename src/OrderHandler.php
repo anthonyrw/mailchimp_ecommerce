@@ -61,7 +61,7 @@ class OrderHandler implements OrderHandlerInterface {
       // Mailchimp API will automatically try to update customer with the order add event,
       // we must unset the email address or else the customer update will fail
       unset($customer['email_address']);
-      
+
       // Get the Mailchimp campaign ID, if available.
       $campaign_id = mailchimp_ecommerce_get_campaign_id();
       if (!empty($campaign_id)) {
@@ -424,7 +424,7 @@ class OrderHandler implements OrderHandlerInterface {
         $mc_address['city'] = $address->getLocality();
       }
       if(!empty($address->getAdministrativeArea())){
-        $mc_address['province_code'] = $address->getAdministrativeArea();
+        $mc_address['province'] = $address->getAdministrativeArea();
       }
       if(!empty($address->getPostalCode())){
         $mc_address['postal_code'] = $address->getPostalCode();
@@ -443,6 +443,7 @@ class OrderHandler implements OrderHandlerInterface {
     } catch (\Exception $e) {
       \Drupal::logger('mailchimp_ecommerce')
         ->error('Attempt to translate profile into mailchimp array failed: ' . $e->getMessage());
+      return null;
     }
   }
 

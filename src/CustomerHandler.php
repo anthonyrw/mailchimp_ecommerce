@@ -182,7 +182,7 @@ class CustomerHandler implements CustomerHandlerInterface {
         'address1' => $address->getAddressLine1(),
         'address2' => $address->getAddressLine2(),
         'city' => $address->getLocality(),
-        'province_code' => $address->getAdministrativeArea(),
+        'province' => $address->getAdministrativeArea(),
         'postal_code' => $address->getPostalCode(),
         'country_code' => $address->getcountryCode(),
       ];
