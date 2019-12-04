@@ -24,6 +24,9 @@ interface CartHandlerInterface {
    * @param string $cart_id
    *   The cart ID.
    *
+   * @return object
+   *   The cart.
+   *
    * @see http://developer.mailchimp.com/documentation/mailchimp/reference/ecommerce/stores/carts/#read-get_ecommerce_stores_store_id_carts_cart_id
    */
   public function getCart($cart_id);

@@ -2,10 +2,50 @@
 
 namespace Drupal\mailchimp_ecommerce;
 
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Messenger\MessengerInterface;
+use Mailchimp\MailchimpEcommerce;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 /**
  * Cart handler.
  */
-class CartHandler implements CartHandlerInterface {
+class CartHandler implements CartHandlerInterface, ContainerInjectionInterface {
+
+  /**
+   * The ecommerce service.
+   *
+   * @var \Mailchimp\MailchimpEcommerce
+   */
+  protected $mcEcommerce;
+
+  /**
+   * The ecommerce helper.
+   *
+   * @var \Drupal\mailchimp_ecommerce\MailchimpEcommerceHelper
+   */
+  protected $helper;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  public function __construct(MailchimpEcommerce $mc_ecommerce, MailchimpEcommerceHelper $helper, MessengerInterface $messenger) {
+    $this->mcEcommerce = $mc_ecommerce;
+    $this->helper = $helper;
+    $this->messenger = $messenger;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      \mailchimp_get_api_object('MailchimpEcommerce'),
+      $container->get('mailchimp_ecommerce.helper'),
+      $container->get('messenger')
+    );
+  }
 
   /**
    * @inheritdoc
@@ -21,16 +61,13 @@ class CartHandler implements CartHandlerInterface {
     $cart = NULL;
 
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot get the requested cart without a store ID.');
       }
 
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-
       try {
-        $cart = $mc_ecommerce->getCart($store_id, $cart_id);
+        $cart = $this->mcEcommerce->getCart($store_id, $cart_id);
       }
       catch (\Exception $e) {
         if ($e->getCode() == 404) {
@@ -43,8 +80,8 @@ class CartHandler implements CartHandlerInterface {
       }
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to get the requested cart: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      //mailchimp_ecommerce_log_error_message('Unable to get the requested cart: ' . $e->getMessage());
+      $this->messenger->addError($e->getMessage());
     }
 
     return $cart;
@@ -55,11 +92,11 @@ class CartHandler implements CartHandlerInterface {
    */
   public function addOrUpdateCart($cart_id, array $customer, array $cart) {
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot add a cart without a store ID.');
       }
-      if (!mailchimp_ecommerce_validate_customer($customer)) {
+      if (!$this->helper->validateCustomer($customer)) {
         // A user not existing in the store's Mailchimp list/audience is not an error, so
         // don't throw an exception.
         return;
@@ -74,24 +111,21 @@ class CartHandler implements CartHandlerInterface {
       }
 
       // Get the Mailchimp campaign ID, if available.
-      $campaign_id = mailchimp_ecommerce_get_campaign_id();
+      $campaign_id = $this->helper->getCampaignId();
       if (!empty($campaign_id)) {
         $cart['campaign_id'] = $campaign_id;
         $cart['landing_site'] = isset($_SESSION['mc_landing_site']) ? $_SESSION['mc_landing_site'] : '';
       }
 
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-
       try {
-        if (!empty($mc_ecommerce->getCart($store_id, $cart_id))) {
-          $mc_ecommerce->updateCart($store_id, $cart_id, $customer, $cart);
+        if (!empty($this->mcEcommerce->getCart($store_id, $cart_id))) {
+          $this->mcEcommerce->updateCart($store_id, $cart_id, $customer, $cart);
         }
       }
       catch (\Exception $e) {
         if ($e->getCode() == 404) {
           // Cart doesn't exist; add a new cart.
-          $mc_ecommerce->addCart($store_id, $cart_id, $customer, $cart);
+          $this->mcEcommerce->addCart($store_id, $cart_id, $customer, $cart);
         }
         else {
           // An actual error occurred; pass on the exception.
@@ -100,8 +134,8 @@ class CartHandler implements CartHandlerInterface {
       }
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to add a cart: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      //mailchimp_ecommerce_log_error_message('Unable to add a cart: ' . $e->getMessage());
+      $this->messenger->addError($e->getMessage());
     }
   }
 
@@ -110,22 +144,19 @@ class CartHandler implements CartHandlerInterface {
    */
   public function deleteCart($cart_id) {
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot delete a cart without a store ID.');
       }
-
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-      $mc_ecommerce->deleteCart($store_id, $cart_id);
+      $this->mcEcommerce->deleteCart($store_id, $cart_id);
     }
     catch (\Exception $e) {
       if ($e->getCode() == 404) {
         // Cart doesn't exist; no need to log an error.
       }
       else {
-        mailchimp_ecommerce_log_error_message('Unable to delete a cart: ' . $e->getMessage());
-        drupal_set_message($e->getMessage(), 'error');
+        //mailchimp_ecommerce_log_error_message('Unable to delete a cart: ' . $e->getMessage());
+        $this->messenger->addError($e->getMessage());
       }
     }
   }
@@ -135,18 +166,16 @@ class CartHandler implements CartHandlerInterface {
    */
   public function addCartLine($cart_id, $line_id, $product) {
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot add a cart line without a store ID.');
       }
 
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-      $mc_ecommerce->addCartLine($store_id, $cart_id, $line_id, $product);
+      $this->mcEcommerce->addCartLine($store_id, $cart_id, $line_id, $product);
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to add a cart line: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      //mailchimp_ecommerce_log_error_message('Unable to add a cart line: ' . $e->getMessage());
+      $this->messenger->addError($e->getMessage());
     }
   }
 
@@ -155,22 +184,20 @@ class CartHandler implements CartHandlerInterface {
    */
   public function updateCartLine($cart_id, $line_id, $product) {
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot update a cart line without a store ID.');
       }
 
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-      $mc_ecommerce->updateCartLine($store_id, $cart_id, $line_id, $product);
+      $this->mcEcommerce->updateCartLine($store_id, $cart_id, $line_id, $product);
     }
     catch (\Exception $e) {
       if ($e->getCode() == 404) {
-        $mc_ecommerce->addCartLine($store_id, $cart_id, $line_id, $product);
+        $this->mcEcommerce->addCartLine($store_id, $cart_id, $line_id, $product);
       }
       else {
-        mailchimp_ecommerce_log_error_message('Unable to update a cart line: ' . $e->getMessage());
-        drupal_set_message($e->getMessage(), 'error');
+        //mailchimp_ecommerce_log_error_message('Unable to update a cart line: ' . $e->getMessage());
+        $this->messenger->addError($e->getMessage());
       }
     }
   }
@@ -180,18 +207,16 @@ class CartHandler implements CartHandlerInterface {
    */
   public function deleteCartLine($cart_id, $line_id) {
     try {
-      $store_id = mailchimp_ecommerce_get_store_id();
+      $store_id = $this->helper->getStoreId();
       if (empty($store_id)) {
         throw new \Exception('Cannot delete a cart line without a store ID.');
       }
 
-      /* @var \Mailchimp\MailchimpEcommerce $mc_ecommerce */
-      $mc_ecommerce = mailchimp_get_api_object('MailchimpEcommerce');
-      $mc_ecommerce->deleteCartLine($store_id, $cart_id, $line_id);
+      $this->mcEcommerce->deleteCartLine($store_id, $cart_id, $line_id);
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to delete a cart line: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      //mailchimp_ecommerce_log_error_message('Unable to delete a cart line: ' . $e->getMessage());
+      $this->messenger->addError($e->getMessage());
     }
   }
 

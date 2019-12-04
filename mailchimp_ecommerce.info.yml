@@ -7,3 +7,6 @@ dependencies:
   - mailchimp:mailchimp
   - mailchimp:mailchimp_lists
 type: module
+test_dependencies:
+  - commerce:commerce
+  - ubercart:ubercart

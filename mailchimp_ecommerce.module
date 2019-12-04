@@ -33,7 +33,7 @@ function mailchimp_ecommerce_generate_store_id() {
  *   The store ID.
  */
 function mailchimp_ecommerce_get_store_id() {
-  return \Drupal::config('mailchimp_ecommerce.settings')->get('mailchimp_ecommerce_store_id');
+  return \Drupal::service('mailchimp_ecommerce.helper')->getStoreId();
 }
 
 /**
@@ -43,30 +43,7 @@ function mailchimp_ecommerce_get_store_id() {
  *   The campaign ID.
  */
 function mailchimp_ecommerce_get_campaign_id() {
-  $session_campaign = isset($_SESSION['mc_cid']) ? $_SESSION['mc_cid'] : '';
-  $campaign_id = '';
-
-  /* @var \Mailchimp\MailchimpCampaigns $mc_campaigns */
-  $mc_campaigns = mailchimp_get_api_object('MailchimpCampaigns');
-
-  // Check to see if this is a valid Mailchimp campaign.
-  try {
-    if (!empty($session_campaign)) {
-      $campaign = $mc_campaigns->getCampaign($session_campaign);
-      $campaign_id = $campaign->id;
-    }
-  }
-  catch (Exception $e) {
-    if ($e->getCode() == 404) {
-      // Campaign doesn't exist; no need to log an error.
-    }
-    else {
-      mailchimp_ecommerce_log_error_message('Unable to get campaign: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
-    }
-  }
-
-  return $campaign_id;
+  return \Drupal::service('mailchimp_ecommerce.helper')->getCampaignId();
 }
 
 /**
@@ -76,7 +53,7 @@ function mailchimp_ecommerce_get_campaign_id() {
  *   TRUE if an integration is enabled.
  */
 function mailchimp_ecommerce_is_enabled() {
-  return (\Drupal::config('mailchimp_ecommerce.settings')->get('mailchimp_ecommerce_integration') !== '');
+  return \Drupal::service('mailchimp_ecommerce.helper')->isEnabled();
 }
 
 /**
@@ -89,7 +66,7 @@ function mailchimp_ecommerce_is_enabled() {
  *   TRUE if customer data is valid.
  */
 function mailchimp_ecommerce_validate_customer(array $customer) {
-  return (isset($customer['id']) && !empty($customer['id']));
+  return \Drupal::service('mailchimp_ecommerce.helper')->validateCustomer($customer);
 }
 
 /**
@@ -111,21 +88,13 @@ function mailchimp_ecommerce_get_list_id() {
  *   Array of currency codes.
  */
 function mailchimp_ecommerce_get_currency_codes() {
-  $currencyfile = drupal_get_path('module', 'mailchimp_ecommerce') . '/' . 'currency-codes-iso4217.xml';
-  $currencydata = simplexml_load_file($currencyfile);
-  $json_string = json_encode($currencydata);
-  $result_array = json_decode($json_string, TRUE);
-  $currencycodes = [];
-  foreach ($result_array['CcyTbl']['CcyNtry'] as $item) {
-    if (!empty($item['Ccy'])) {
-      $currencycodes[$item['Ccy']] = $item['CcyNm'] . ' (' . $item['Ccy'] . ')';
-    }
-  }
-  return $currencycodes;
+  return \Drupal::service('mailchimp_ecommerce.helper')->getCurrencyCodes();
 }
 
 /**
  * Logs an error message using watchdog, if enabled.
+ *
+ * @todo This function cannot run, the function "watchdog" is never defined.
  *
  * @param string $message
  *   The error message to log.

@@ -62,8 +62,16 @@ class MailchimpEcommerceAdminSettings extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('mailchimp_ecommerce.settings');
 
-    foreach (Element::children($form) as $variable) {
-      $config->set($variable, $form_state->getValue($form[$variable]['#parents']));
+    $settings = [
+      'mailchimp_ecommerce_store_name',
+      'mailchimp_ecommerce_list_id',
+      'mailchimp_ecommerce_store_id',
+      'mailchimp_ecommerce_integration',
+    ];
+    foreach ($settings as $variable) {
+      if (isset($form[$variable]['#parents'])) {
+        $config->set($variable, $form_state->getValue($form[$variable]['#parents']));
+      }
     }
     $config->save();
 

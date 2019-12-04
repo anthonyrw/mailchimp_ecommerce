@@ -1,6 +1,6 @@
 mailchimp_ecommerce.settings:
-  type: mapping
-  label: Settings
+  type: config_object
+  label: Mailchimp eCommerce Settings
   mapping:
     mailchimp_ecommerce_store_name:
       type: string

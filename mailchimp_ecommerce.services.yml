@@ -1,6 +1,8 @@
 services:
   mailchimp_ecommerce.cart_handler:
     class: '\Drupal\mailchimp_ecommerce\CartHandler'
+    factory: ['@class_resolver', 'getInstanceFromDefinition']
+    arguments: ['\Drupal\mailchimp_ecommerce\CartHandler']
 
   mailchimp_ecommerce.customer_handler:
     class: '\Drupal\mailchimp_ecommerce\CustomerHandler'
@@ -22,3 +24,8 @@ services:
     class: Drupal\Core\Database\Connection
     factory: Drupal\Core\Database\Database::getConnection
     arguments: [default]
+
+  mailchimp_ecommerce.helper:
+    class: '\Drupal\mailchimp_ecommerce\MailchimpEcommerceHelper'
+    factory: ['@class_resolver', 'getInstanceFromDefinition']
+    arguments: ['\Drupal\mailchimp_ecommerce\MailchimpEcommerceHelper']

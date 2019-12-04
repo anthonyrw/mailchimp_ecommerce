@@ -58,11 +58,17 @@ class BatchSyncOrders {
       }
 
       // Add cart item price to order data.
-      if (!isset($order_data['currency_code']) && !empty($order->getTotalPrice())) {
+      if (!isset($order_data['currency_code'])) {
         $price = $order->getTotalPrice();
 
-        $order_data['currency_code'] = $price->getCurrencyCode();
-        $order_data['order_total'] = $price->getNumber();
+        if ($price = $order->getTotalPrice()) {
+          $order_data['currency_code'] = $price->getCurrencyCode();
+          $order_data['order_total'] = $price->getNumber();
+        }
+        else {
+          $order_data['currency_code'] = $order->getStore()->getDefaultCurrency()->getCurrencyCode();
+          $order_data['order_total'] = 0;
+        }
       }
 
       $cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
@@ -93,7 +99,7 @@ class BatchSyncOrders {
 
       $context['sandbox']['progress']++;
 
-      $context['message'] = t('Sent @count of @total products to Mailchimp', [
+      $context['message'] = t('Sent @count of @total orders to Mailchimp', [
         '@count' => $context['sandbox']['progress'],
         '@total' => $context['sandbox']['total'],
       ]);
