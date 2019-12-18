@@ -3,6 +3,7 @@
 namespace Drupal\mailchimp_ecommerce_commerce;
 
 use Drupal\commerce_order\Entity\Order;
+use Drupal\Core\Url;
 
 /**
  * Batch process handler for syncing order data to Mailchimp.
@@ -65,6 +66,7 @@ class BatchSyncOrders {
         }
       }
 
+      $order_data['checkout_url'] = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id()], ['absolute' => TRUE])->toString();
       $cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
 
       if ($order_state == 'completed') {
