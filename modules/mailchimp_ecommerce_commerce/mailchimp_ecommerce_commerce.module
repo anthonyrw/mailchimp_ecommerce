@@ -214,6 +214,7 @@ function mailchimp_ecommerce_commerce_admin_sync_submit($form, &$form_state) {
 
     $query = new EntityFieldQuery();
     $result = $query->entityCondition('entity_type', 'commerce_product')
+      ->addTag('mailchimp_ecommerce_commerce_product_sync')
       ->execute();
 
     if (isset($result['commerce_product'])) {

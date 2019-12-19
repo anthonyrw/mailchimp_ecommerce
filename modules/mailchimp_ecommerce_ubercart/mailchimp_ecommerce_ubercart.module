@@ -212,6 +212,7 @@ function mailchimp_ecommerce_ubercart_admin_sync_submit($form, &$form_state) {
 
     $result = db_select('uc_products', 'ucp')
       ->fields('ucp', ['nid'])
+      ->addTag('mailchimp_ecommerce_ubercart_product_sync')
       ->execute()
       ->fetchCol();
 
