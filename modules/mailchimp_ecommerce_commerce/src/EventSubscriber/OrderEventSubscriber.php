@@ -7,6 +7,7 @@ use Drupal\commerce_order\Event\OrderAssignEvent;
 use Drupal\commerce_order\Event\OrderEvent;
 use Drupal\commerce_order\Event\OrderItemEvent;
 use Drupal\commerce_order\Event\OrderEvents;
+use Drupal\Core\Url;
 use Drupal\mailchimp_ecommerce\CartHandler;
 use Drupal\mailchimp_ecommerce\CustomerHandler;
 use Drupal\mailchimp_ecommerce\OrderHandler;
@@ -97,6 +98,7 @@ class OrderEventSubscriber implements EventSubscriberInterface {
         $order_data['order_total'] = $price->getNumber();
       }
 
+      $order_data['checkout_url'] = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id()], ['absolute' => TRUE])->toString();
       $this->cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
     }
 
@@ -160,12 +162,14 @@ class OrderEventSubscriber implements EventSubscriberInterface {
     try {
       $this->cart_handler->deleteCart($order->id());
 
+      // Email address should always be available on checkout completion.
       $customer['email_address'] = $order->getEmail();
       $billing_profile = $order->getBillingProfile();
       $customer = $this->customer_handler->buildCustomer($customer, $billing_profile);
       $order_data = $this->order_handler->buildOrder($order, $customer);
       $order_data['financial_status'] = 'pending';
 
+      // Update the customer's total order count and total amount spent.
       $this->customer_handler->incrementCustomerOrderTotal($customer['email_address'], $order_data['order_total']);
       $this->order_handler->addOrder($order->id(), $customer, $order_data);
 
@@ -216,10 +220,10 @@ class OrderEventSubscriber implements EventSubscriberInterface {
       if($price) {
         $order_data['currency_code'] = $price->getCurrencyCode();
         $order_data['order_total'] = $price->getNumber();
-        $this->cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
       }
     }
 
+    $order_data['checkout_url'] = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id()], ['absolute' => TRUE])->toString();
     $this->cart_handler->addOrUpdateCart($order->id(), $customer, $order_data);
   }
 
