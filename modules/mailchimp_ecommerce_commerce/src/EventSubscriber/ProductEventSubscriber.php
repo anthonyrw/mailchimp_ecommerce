@@ -2,72 +2,30 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
-use Drupal\commerce_product\Entity\Product;
-use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_product\Event\ProductEvent;
 use Drupal\commerce_product\Event\ProductEvents;
-use Drupal\mailchimp_ecommerce\ProductHandler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Event Subscriber for Commerce Products.
  */
 class ProductEventSubscriber implements EventSubscriberInterface {
-
-  /**
-   * The Product Handler.
-   *
-   * @var \Drupal\mailchimp_ecommerce\ProductHandler
-   */
-  private $product_handler;
-
-  /**
-   * ProductEventSubscriber constructor.
-   *
-   * @param \Drupal\mailchimp_ecommerce\ProductHandler $product_handler
-   *   The Product Handler.
-   */
-  public function __construct(ProductHandler $product_handler) {
-    $this->product_handler = $product_handler;
-  }
-
   /**
    * Respond to event fired after saving a new product.
    */
   public function productInsert(ProductEvent $event) {
-    /** @var Product $product */
-    $product = $event->getProduct();
-
-    $product_id = $product->get('product_id')->value;
-    $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    // TODO Fix Type
-    $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
-
-    $variants = $this->product_handler->buildProductVariants($product);
-    $url = $this->product_handler->buildProductUrl($product);
-    $image_url = $this->product_handler->getProductImageUrl($product);
-    $description = $this->product_handler->getProductDescription($product);
-
-    $this->product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductInsertQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_insert_queue');
+    $queue->createItem($event);
   }
 
   /**
    * Respond to event fired after updating an existing product.
    */
   public function productUpdate(ProductEvent $event) {
-    $product = $event->getProduct();
-
-    $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    // TODO Fix Type
-    $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
-
-    $variants = $this->product_handler->buildProductVariants($product);
-    $url = $this->product_handler->buildProductUrl($product);
-    $image_url = $this->product_handler->getProductImageUrl($product);
-    $description = $this->product_handler->getProductDescription($product);
-
-    // Update the existing product and variant.
-    $this->product_handler->updateProduct($product, $title, $url, $image_url, $description, $type, $variants);
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductUpdateQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_update_queue');
+    $queue->createItem($event);
 
   }
 
@@ -75,9 +33,9 @@ class ProductEventSubscriber implements EventSubscriberInterface {
    * Respond to event fired after deleting a product.
    */
   public function productDelete(ProductEvent $event) {
-    $product = $event->getProduct();
-    $product_id = $product->get('product_id')->value;
-    $this->product_handler->deleteProduct($product_id);
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductDeleteQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_delete_queue');
+    $queue->createItem($event);
   }
 
   /**
