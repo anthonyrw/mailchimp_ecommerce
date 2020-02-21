@@ -24,7 +24,6 @@ class ProductQueue extends QueueWorkerBase
   private $image_url;
   private $description;
 
-
   final public function processItem($data) : void
   {
     $this->product_id = $data['product_id'];
@@ -75,7 +74,7 @@ class ProductQueue extends QueueWorkerBase
     catch (\Exception $e){
       // This should be redundant ... but just in case
       // If we try to update a product that doesn't exist, add it to the product insert queue
-      if( $e->getCode() === '404') {
+      if( $e->getCode() === 404) {
         $queue = \Drupal::queue('mailchimp_ecommerce_commerce_product_insert_queue');
         $queue->createItem([
           'product_id' => $this->product_id,

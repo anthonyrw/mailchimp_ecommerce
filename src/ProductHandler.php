@@ -32,10 +32,13 @@ class ProductHandler implements ProductHandlerInterface {
       ]);
     }
     catch (\Exception $e) {
-
-      //TODO: If add fails with product exists error code, run an update here.
-      mailchimp_ecommerce_log_error_message('Unable to add product: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      if($e->getCode() === 400) {
+        $this->updateProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+      }
+      else {
+        mailchimp_ecommerce_log_error_message('Unable to add product: ' . $e->getMessage());
+        drupal_set_message($e->getMessage(), 'error');
+      }
     }
   }
 
@@ -70,8 +73,10 @@ class ProductHandler implements ProductHandlerInterface {
       ]);
     }
     catch (\Exception $e) {
-      if ($e->getCode() == 404) {
-        drupal_set_message('This product doesn\'t exist in Mailchimp. Please sync all your products.');
+      if ($e->getCode() === 404) {
+        // The product doesn't exist in mailchimp, so it needs to be added instead of updated.
+        $this->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+//        drupal_set_message('This product doesn\'t exist in Mailchimp. Please sync all your products.');
       }
       else {
         // An actual error occurred; pass on the exception.
@@ -96,8 +101,11 @@ class ProductHandler implements ProductHandlerInterface {
       $mc_ecommerce->deleteProduct($store_id, $product_id);
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to delete product: ' . $e->getMessage());
-      drupal_set_message($e->getMessage(), 'error');
+      // The product doesn't exist in mailchimp, so it doesn't need to be deleted. Only throw error if not 404
+      if($e->getCode() !== 404) {
+        mailchimp_ecommerce_log_error_message('Unable to delete product: ' . $e->getMessage());
+        drupal_set_message($e->getMessage(), 'error');
+      }
     }
   }
 
