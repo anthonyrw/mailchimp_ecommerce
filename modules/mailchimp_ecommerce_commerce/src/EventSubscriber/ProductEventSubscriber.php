@@ -13,29 +13,45 @@ class ProductEventSubscriber implements EventSubscriberInterface {
   /**
    * Respond to event fired after saving a new product.
    */
-  public function productInsert(ProductEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductInsertQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_insert_queue');
-    $queue->createItem($event);
+  private function productInsert(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductInsertEvent'
+    ];
+    $queue->createItem($data);
   }
 
   /**
    * Respond to event fired after updating an existing product.
    */
-  public function productUpdate(ProductEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductUpdateQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_update_queue');
-    $queue->createItem($event);
+  private function productUpdate(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductUpdateEvent'
+    ];
+    $queue->createItem($data);
 
   }
 
   /**
    * Respond to event fired after deleting a product.
+   * @param ProductEvent $event
    */
-  public function productDelete(ProductEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductDeleteQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_delete_queue');
-    $queue->createItem($event);
+  private function productDelete(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductDeleteEvent'
+    ];
+    $queue->createItem($data);
   }
 
   /**

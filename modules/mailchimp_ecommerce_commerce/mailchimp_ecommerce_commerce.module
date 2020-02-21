@@ -4,3 +4,7 @@
  * @file
  * Integrates Drupal Commerce with Mailchimp eCommerce.
  */
+//function mailchimp_ecommerce_cron() {
+////  $queue = \Drupal::queue('mailchimp_ecommerce_commerce_cart_add_queue');
+////
+////}

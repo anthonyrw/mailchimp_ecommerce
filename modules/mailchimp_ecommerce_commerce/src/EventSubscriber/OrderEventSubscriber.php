@@ -10,12 +10,16 @@ use Drupal\commerce_order\Event\OrderAssignEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Drupal\profile\Entity\ProfileInterface;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
+use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderAssignQueue;
+use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPaidQueue;
+use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPlaceQueue;
+use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderUpdateQueue;
+use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderGuestAssignQueue;
 
 /**
  * Event Subscriber for Commerce Orders.
  */
 class OrderEventSubscriber implements EventSubscriberInterface {
-
 
   /**
    * {@inheritdoc}
@@ -30,26 +34,39 @@ class OrderEventSubscriber implements EventSubscriberInterface {
   }
 
   public function orderPlace(OrderEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPlaceQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_place_queue');
-    $queue->createItem( $event->getOrder() );
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
+    assert($queue instanceof OrderQueue);
+    $data = [
+      'order_id' => $event->getOrder()->id(),
+      'email' => $event->getOrder()->getEmail(),
+      'event' => 'OrderPlacedEvent',
+    ];
+    $queue->createItem( $data );
   }
 
   public function orderUpdate(OrderEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderUpdateQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_update_queue');
-    $queue->createItem( $event->getOrder() );
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
+    assert($queue instanceof OrderQueue);
+    $data = [
+      'order_id' => $event->getOrder()->id(),
+      'email' => $event->getOrder()->getEmail(),
+      'event' => 'OrderUpdatedEvent',
+    ];
+    $queue->createItem( $data );
   }
 
   public function orderAssign(OrderAssignEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderAssignQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_assign_queue');
-    $queue->createItem($event);
+
   }
 
   public function orderPaid(OrderEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPaidQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_paid_queue');
-    $queue->createItem($event->getOrder());
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
+    assert($queue instanceof OrderQueue);
+    $data = [
+      'order_id' => $event->getOrder()->id(),
+      'email' => $event->getOrder()->getEmail(),
+      'event' => 'OrderPaidEvent',
+    ];
+    $queue->createItem( $data );
   }
 }

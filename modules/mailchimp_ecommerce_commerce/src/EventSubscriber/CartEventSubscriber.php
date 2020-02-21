@@ -2,6 +2,7 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
+use Drupal;
 use Drupal\commerce_cart\Event\CartEntityAddEvent;
 use Drupal\commerce_cart\Event\CartEvents;
 use Drupal\commerce_cart\Event\CartOrderItemRemoveEvent;
@@ -13,50 +14,43 @@ use Drupal\mailchimp_ecommerce\CartHandler;
 use Drupal\mailchimp_ecommerce\CustomerHandler;
 use Drupal\mailchimp_ecommerce\OrderHandler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Drupal\commerce_cart\Event\CartEmptyEvent;
 
 /**
  * Event Subscriber for Commerce Carts.
  */
 class CartEventSubscriber implements EventSubscriberInterface {
 
-  /**
-   * Respond to event fired after adding a cart item.
-   *
-   * Initial cart creation in Mailchimp needs to happen when the first cart
-   * item is added. This is because we can't rely on the total price being
-   * available when the Commerce Order itself is first created.
-   */
-  public function cartAdd(CartEntityAddEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartAddQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_add_queue');
-    $queue->createItem($event);
-  }
+  public function cartEventResponse($event) {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_queue');
 
-  /**
-   * Respond to event fired after updating a cart item.
-   */
-  public function cartItemUpdate(CartOrderItemUpdateEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartAddQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_item_add_queue');
-    $queue->createItem($event);
-  }
+    $cart = $event->getCart();
 
-  /**
-   * Respond to event fired after removing a cart item.
-   */
-  public function cartItemRemove(CartOrderItemRemoveEvent $event) {
-    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartAddQueue $queue */
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_item_remove_queue');
-    $queue->createItem($event);
+    if( $cart->getEmail() !== null ) {
+      $data = [
+        'order_id' => $cart->id(),
+        'email' => $cart->getEmail(),
+        'event' => gettype($event),
+        'order_item_id' => null,
+      ];
+
+      if(method_exists($event, 'getOrderItem')) {
+        $data['order_item_id'] = $event->getOrderItem()->id();
+      }
+
+      $queue->createItem($data);
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events[CartEvents::CART_ENTITY_ADD][] = ['cartAdd'];
-    $events[CartEvents::CART_ORDER_ITEM_UPDATE][] = ['cartItemUpdate'];
-    $events[CartEvents::CART_ORDER_ITEM_REMOVE][] = ['cartItemRemove'];
+    $events[CartEvents::CART_ENTITY_ADD][] = ['cartEventResponse'];
+    $events[CartEvents::CART_ORDER_ITEM_UPDATE][] = ['cartEventResponse'];
+    $events[CartEvents::CART_ORDER_ITEM_REMOVE][] = ['cartEventResponse'];
+    $events[CartEvents::CART_EMPTY][] = ['cartEventResponse'];
 
     return $events;
   }

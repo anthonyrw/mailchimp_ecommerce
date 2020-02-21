@@ -209,7 +209,8 @@ class ProductHandler implements ProductHandlerInterface {
     $description = '';
 
     $config = \Drupal::config('mailchimp_ecommerce.settings');
-    $description_field_name = $config->get('description');
+    $description_field_name = $config->get('description') ?: 'body';
+
     if($product->getEntityType()->id() == 'commerce_product') {
       $variation = $product->getDefaultVariation();
       if (isset($variation->{$description_field_name})) {
@@ -230,7 +231,7 @@ class ProductHandler implements ProductHandlerInterface {
     $description = '';
 
     $config = \Drupal::config('mailchimp_ecommerce.settings');
-    $description_field_name = $config->get('description');
+    $description_field_name = $config->get('description') ?: 'body';
 
     if (isset($product->{$description_field_name}->entity)) {
       $description = $product->{$description_field_name}->entity->value;
