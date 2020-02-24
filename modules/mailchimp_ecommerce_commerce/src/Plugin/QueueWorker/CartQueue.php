@@ -2,13 +2,7 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker;
 
-use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
-use Drupal\commerce_order\Event\OrderAssignEvent;
-use Drupal\commerce_order\Event\OrderEvent;
-use Drupal\commerce_price\Price;
-use Drupal\commerce_promotion\Entity\Coupon;
-use Drupal\Core\Url;
 
 /**
  * Updates Orders in Mailchimp

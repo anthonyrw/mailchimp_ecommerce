@@ -4,14 +4,7 @@ namespace Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker;
 
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderInterface;
-use Drupal\commerce_order\Event\OrderAssignEvent;
-use Drupal\commerce_order\Event\OrderEvent;
 use Drupal\commerce_promotion\Entity\Coupon;
-use Drupal\Core\Url;
-use Drupal\mailchimp_ecommerce\CartHandler;
-use Drupal\mailchimp_ecommerce\CustomerHandler;
-use Drupal\mailchimp_ecommerce\OrderHandler;
-use Drupal\mailchimp_ecommerce\PromoHandler;
 
 /**
  * Updates Orders in Mailchimp

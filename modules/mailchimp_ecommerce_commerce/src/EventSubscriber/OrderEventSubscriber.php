@@ -3,7 +3,6 @@
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
 use Drupal;
-use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Event\OrderEvents;
 use Drupal\commerce_order\Event\OrderEvent;
 use Drupal\commerce_order\Event\OrderAssignEvent;
