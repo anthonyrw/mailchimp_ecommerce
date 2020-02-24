@@ -45,14 +45,25 @@ class OrderEventSubscriber implements EventSubscriberInterface {
   }
 
   public function orderUpdate(OrderEvent $event) {
-    $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
-    assert($queue instanceof OrderQueue);
-    $data = [
-      'order_id' => $event->getOrder()->id(),
-      'email' => $event->getOrder()->getEmail(),
-      'event' => 'OrderUpdatedEvent',
-    ];
-    $queue->createItem( $data );
+    // don't create a queue item if certain conditions haven't been met
+    $state = $event->getOrder()->getState()->getValue();
+    switch($state) {
+      case 'validation':
+      case 'fulfillment':
+      case 'completed':
+      case 'canceled':
+        $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
+        assert($queue instanceof OrderQueue);
+        $data = [
+          'order_id' => $event->getOrder()->id(),
+          'email' => $event->getOrder()->getEmail(),
+          'event' => 'OrderUpdatedEvent',
+        ];
+        $queue->createItem( $data );
+        break;
+      default:
+        break;
+    }
   }
 
   public function orderAssign(OrderAssignEvent $event) {

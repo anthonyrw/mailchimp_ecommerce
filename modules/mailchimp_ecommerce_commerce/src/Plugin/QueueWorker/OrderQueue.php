@@ -41,13 +41,13 @@ class OrderQueue extends QueueWorkerBase {
       }
 
       elseif($this->event === 'OrderPaidEvent') {
-        $this->placedOrderUpdated();
+        $this->orderPaid();
       }
 
       elseif ($this->event === 'OrderUpdatedEvent') {
         /** @var OrderInterface $order */
         $this->order = Order::load($this->order_id);
-        $this->order_state = $order->getState()->getValue();
+        $this->order_state = $this->order->getState()->getValue();
         if($this->order_state !== 'draft') {
           $this->placedOrderUpdated();
         }
@@ -96,8 +96,10 @@ class OrderQueue extends QueueWorkerBase {
     foreach($order->get('coupons') as $coupon) {
 
       $coupon_id = $coupon->get('target_id')->getCastedValue();
-      $promotion_id = Coupon::load($coupon_id)->getPromotionId();
-      $promo_code = $this->promo_handler->buildPromoCode(Coupon::load($coupon_id));
+      /** @var Coupon $coupon */
+      $coupon = Coupon::load($coupon_id);
+      $promotion_id = $coupon->getPromotionId();
+      $promo_code = $this->promo_handler->buildPromoCode($coupon);
       $promo_code['usage_count'] = (int) ($this->promo_handler->getPromoCode($promotion_id, $coupon_id)->usage_count) + 1;
 
       try {
@@ -114,6 +116,7 @@ class OrderQueue extends QueueWorkerBase {
   private function placedOrderUpdated() : void
   {
     $order_data['id'] = $this->order_id;
+    $update = false;
 
     if ($this->order_state === 'validation' || $this->order_state === 'fulfillment') {
       // while in validation and fulfillment states, make sure all order
@@ -121,19 +124,33 @@ class OrderQueue extends QueueWorkerBase {
       $customer['email_address'] = $this->email;
       $customer = $this->customer_handler->buildCustomer($customer, $this->order->getBillingProfile());
       $order_data = $this->order_handler->buildOrder($this->order, $customer);
+      $update = true;
     }
     elseif ($this->order_state === 'completed') {
       $order_data['processed_at_foreign'] = date('c');
       $order_data['fulfillment_status'] = 'shipped';
+      $update = true;
     }
     elseif ($this->order_state === 'canceled') {
       $order_data['cancelled_at_foreign'] = date('c');
       $order_data['financial_status'] = 'cancelled';
-    }
-    elseif ($this->event === 'OrderPaidEvent') {
-      $order_data['financial_status'] = 'paid';
+      $update = true;
     }
 
+    try {
+      // We should only be updating if something has changed
+      if ($update) {
+        $this->order_handler->updateOrder($this->order_id, $order_data);
+      }
+    }
+    catch (\Exception $e) {
+      mailchimp_ecommerce_log_error_message('There was an error trying to update a placed order ' . $this->order_id);
+    }
+  }
+
+  private function orderPaid() : void {
+    $order_data['id'] = $this->order_id;
+    $order_data['financial_status'] = 'paid';
     try {
       $this->order_handler->updateOrder($this->order_id, $order_data);
     }

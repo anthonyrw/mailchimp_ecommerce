@@ -2,6 +2,7 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
+use Drupal;
 use Drupal\commerce_product\Event\ProductEvent;
 use Drupal\commerce_product\Event\ProductEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -13,7 +14,7 @@ class ProductEventSubscriber implements EventSubscriberInterface {
   /**
    * Respond to event fired after saving a new product.
    */
-  private function productInsert(ProductEvent $event) : void
+  public function productInsert(ProductEvent $event) : void
   {
     /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
@@ -27,7 +28,7 @@ class ProductEventSubscriber implements EventSubscriberInterface {
   /**
    * Respond to event fired after updating an existing product.
    */
-  private function productUpdate(ProductEvent $event) : void
+  public function productUpdate(ProductEvent $event) : void
   {
     /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
@@ -43,7 +44,7 @@ class ProductEventSubscriber implements EventSubscriberInterface {
    * Respond to event fired after deleting a product.
    * @param ProductEvent $event
    */
-  private function productDelete(ProductEvent $event) : void
+  public function productDelete(ProductEvent $event) : void
   {
     /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');

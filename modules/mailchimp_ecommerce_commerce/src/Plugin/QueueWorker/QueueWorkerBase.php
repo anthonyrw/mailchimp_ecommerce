@@ -50,6 +50,13 @@ class QueueWorkerBase extends DrupalQueueWorkerBase {
    */
   protected $promo_handler;
 
+  /**
+   * The Product Handler.
+   *
+   * @var \Drupal\mailchimp_ecommerce\ProductHandler
+   */
+  protected $product_handler;
+
   public function __construct(array $configuration, $plugin_id, $plugin_definition)
   {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -61,6 +68,8 @@ class QueueWorkerBase extends DrupalQueueWorkerBase {
     $this->cart_handler = Drupal::service('mailchimp_ecommerce.cart_handler');
     /** @var OrderHandler order_handler */
     $this->order_handler = Drupal::service('mailchimp_ecommerce.order_handler');
+    /** @var Drupal\mailchimp_ecommerce\ProductHandler product_handler */
+    $this->product_handler = Drupal::service('mailchimp_ecommerce.product_handler');
   }
 
   /**
