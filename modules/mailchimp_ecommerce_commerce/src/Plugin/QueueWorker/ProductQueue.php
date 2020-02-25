@@ -51,7 +51,7 @@ class ProductQueue extends QueueWorkerBase
     $this->description = $this->product_handler->getProductDescription($this->product);
   }
 
-  private function productInsert() : void
+  public function productInsert() : void
   {
     $this->defineParams();
     try {
@@ -63,7 +63,7 @@ class ProductQueue extends QueueWorkerBase
     }
   }
 
-  private function productUpdate() : void
+  public function productUpdate() : void
   {
     $this->defineParams();
 
@@ -84,7 +84,7 @@ class ProductQueue extends QueueWorkerBase
     }
   }
 
-  private function productDelete() : void
+  public function productDelete() : void
   {
     try {
       $this->product_handler->deleteProduct($this->product_id);

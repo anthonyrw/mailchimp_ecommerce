@@ -11,7 +11,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class CartEventSubscriber implements EventSubscriberInterface {
 
-  public function cartEventResponse($event) {
+  public function cartEventResponse($event) : void
+  {
     /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartQueue $queue */
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_queue');
 
@@ -36,7 +37,8 @@ class CartEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : void
+  {
     $events[CartEvents::CART_ENTITY_ADD][] = ['cartEventResponse'];
     $events[CartEvents::CART_ORDER_ITEM_UPDATE][] = ['cartEventResponse'];
     $events[CartEvents::CART_ORDER_ITEM_REMOVE][] = ['cartEventResponse'];
