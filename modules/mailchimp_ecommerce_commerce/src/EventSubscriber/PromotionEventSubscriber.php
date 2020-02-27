@@ -52,7 +52,7 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
     try {
       $this->promo_handler->updatePromoRule($promo_rule);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Could not update promo rule: ' . $promotion->getCode());
+      mailchimp_ecommerce_log_error_message('Could not update promo rule: ' . $promotion->id());
     }
   }
 
