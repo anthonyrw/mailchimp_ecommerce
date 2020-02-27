@@ -23,7 +23,8 @@ class OrderEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : array
+  {
     $events['commerce_order.place.post_transition'] = ['orderPlace'];
     $events[OrderEvents::ORDER_UPDATE][] = ['orderUpdate'];
     $events[OrderEvents::ORDER_ASSIGN][] = ['orderAssign'];

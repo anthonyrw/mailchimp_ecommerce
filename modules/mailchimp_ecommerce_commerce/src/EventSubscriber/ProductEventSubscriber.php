@@ -58,7 +58,8 @@ class ProductEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : array
+  {
     $events[ProductEvents::PRODUCT_INSERT][] = ['productInsert'];
     $events[ProductEvents::PRODUCT_UPDATE][] = ['productUpdate'];
     $events[ProductEvents::PRODUCT_DELETE][] = ['productDelete'];

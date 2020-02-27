@@ -37,7 +37,7 @@ class CartEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() : void
+  public static function getSubscribedEvents() : array
   {
     $events[CartEvents::CART_ENTITY_ADD][] = ['cartEventResponse'];
     $events[CartEvents::CART_ORDER_ITEM_UPDATE][] = ['cartEventResponse'];

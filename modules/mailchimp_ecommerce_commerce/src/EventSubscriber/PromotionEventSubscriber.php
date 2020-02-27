@@ -91,7 +91,8 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : array
+  {
     $events[PromotionEvents::PROMOTION_INSERT][] = ['promoRuleInsert'];
     $events[PromotionEvents::PROMOTION_UPDATE][] = ['promoRuleUpdate'];
     $events[PromotionEvents::PROMOTION_DELETE][] = ['promoRuleDelete'];
