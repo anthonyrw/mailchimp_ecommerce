@@ -24,6 +24,9 @@ class ProductQueue extends QueueWorkerBase
   private $image_url;
   private $description;
 
+  /**
+   * {@inheritDoc}
+   */
   final public function processItem($data) : void
   {
     $this->product_id = $data['product_id'];
@@ -41,6 +44,9 @@ class ProductQueue extends QueueWorkerBase
     }
   }
 
+  /**
+   * Define values needed to create/update a product in Mailchimp
+   */
   private function defineParams() : void {
     $this->title = (!empty($this->product->get('title')->value)) ? $this->product->get('title')->value : '';
     // TODO Fix Type
@@ -51,6 +57,9 @@ class ProductQueue extends QueueWorkerBase
     $this->description = $this->product_handler->getProductDescription($this->product);
   }
 
+  /**
+   * Add a new product to Mailchimp
+   */
   public function productInsert() : void
   {
     $this->defineParams();
@@ -63,6 +72,9 @@ class ProductQueue extends QueueWorkerBase
     }
   }
 
+  /**
+   * Update a product in Mailchimp
+   */
   public function productUpdate() : void
   {
     $this->defineParams();
@@ -84,6 +96,9 @@ class ProductQueue extends QueueWorkerBase
     }
   }
 
+  /**
+   * Delete a product from Mailchimp
+   */
   public function productDelete() : void
   {
     try {

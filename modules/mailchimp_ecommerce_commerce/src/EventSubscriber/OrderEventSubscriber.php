@@ -14,6 +14,7 @@ use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPaidQueue;
 use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderPlaceQueue;
 use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderUpdateQueue;
 use Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\OrderGuestAssignQueue;
+use Drupal\state_machine\Event\WorkflowTransitionEvent;
 
 /**
  * Event Subscriber for Commerce Orders.
@@ -33,18 +34,26 @@ class OrderEventSubscriber implements EventSubscriberInterface {
     return $events;
   }
 
-  public function orderPlace(OrderEvent $event) {
+  /**
+   * @param \Drupal\state_machine\Event\WorkflowTransitionEvent $event
+   */
+  public function orderPlace(WorkflowTransitionEvent $event) : void
+  {
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
     assert($queue instanceof OrderQueue);
     $data = [
-      'order_id' => $event->getOrder()->id(),
-      'email' => $event->getOrder()->getEmail(),
+      'order_id' => $event->getEntity()->id(),
+      'email' => $event->getEntity()->getEmail(),
       'event' => 'OrderPlacedEvent',
     ];
     $queue->createItem( $data );
   }
 
-  public function orderUpdate(OrderEvent $event) {
+  /**
+   * @param \Drupal\commerce_order\Event\OrderEvent $event
+   */
+  public function orderUpdate(OrderEvent $event) : void
+  {
     // don't create a queue item if certain conditions haven't been met
     $state = $event->getOrder()->getState()->getValue();
     switch($state) {
@@ -66,11 +75,19 @@ class OrderEventSubscriber implements EventSubscriberInterface {
     }
   }
 
-  public function orderAssign(OrderAssignEvent $event) {
-
+  /**
+   * @param \Drupal\commerce_order\Event\OrderAssignEvent $event
+   */
+  public function orderAssign(OrderAssignEvent $event) : void
+  {
+    // TODO: is this even necessary anymore?
   }
 
-  public function orderPaid(OrderEvent $event) {
+  /**
+   * @param \Drupal\commerce_order\Event\OrderEvent $event
+   */
+  public function orderPaid(OrderEvent $event) : void
+  {
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_order_queue');
     assert($queue instanceof OrderQueue);
     $data = [

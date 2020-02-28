@@ -81,6 +81,9 @@ class QueueWorkerBase extends DrupalQueueWorkerBase {
   }
 
 
+  /**
+   * Update a cart in Mailchimp. This can be called by both Order and Cart Queues
+   */
   protected function cartUpdated(): void
   {
     $order = Order::load($this->order_id);

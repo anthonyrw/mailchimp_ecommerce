@@ -44,6 +44,7 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
 
   /**
    * Respond to event fired after updating a promotion.
+   * @param PromotionEvent $event
    */
   public function promoRuleUpdate(PromotionEvent $event) {
     /** @var Promotion $promotion */

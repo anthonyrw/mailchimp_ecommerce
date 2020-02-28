@@ -11,7 +11,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class CartEventSubscriber implements EventSubscriberInterface {
 
-  public function cartEventResponse($event) : void
+  /**
+   * Respond to various cart events
+   *
+   * @param mixed $event
+   */
+  final public function cartEventResponse($event) : void
   {
     /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\CartQueue $queue */
     $queue = Drupal::queue('mailchimp_ecommerce_commerce_cart_queue');

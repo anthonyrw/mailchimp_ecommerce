@@ -21,7 +21,7 @@ class OrderQueue extends QueueWorkerBase {
   private $order_state;
 
   /**
-   * @inheritDoc
+   * {@inheritDoc}
    */
   final public function processItem($data) : void
   {
@@ -50,6 +50,9 @@ class OrderQueue extends QueueWorkerBase {
       }
   }
 
+  /**
+   * When the order is placed, delete cart and add order in Mailchimp
+   */
   private function orderPlaced() : void
   {
 
@@ -105,7 +108,9 @@ class OrderQueue extends QueueWorkerBase {
     }
   }
 
-
+  /**
+   * Update a placed order in Mailchimp
+   */
   private function placedOrderUpdated() : void
   {
     $order_data['id'] = $this->order_id;
@@ -141,6 +146,9 @@ class OrderQueue extends QueueWorkerBase {
     }
   }
 
+  /**
+   * Update the financial status of an order in Mailchimp
+   */
   private function orderPaid() : void {
     $order_data['id'] = $this->order_id;
     $order_data['financial_status'] = 'paid';

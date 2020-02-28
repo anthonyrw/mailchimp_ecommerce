@@ -13,6 +13,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class ProductEventSubscriber implements EventSubscriberInterface {
   /**
    * Respond to event fired after saving a new product.
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
   public function productInsert(ProductEvent $event) : void
   {
@@ -27,6 +29,8 @@ class ProductEventSubscriber implements EventSubscriberInterface {
 
   /**
    * Respond to event fired after updating an existing product.
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
   public function productUpdate(ProductEvent $event) : void
   {
@@ -42,7 +46,8 @@ class ProductEventSubscriber implements EventSubscriberInterface {
 
   /**
    * Respond to event fired after deleting a product.
-   * @param ProductEvent $event
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
   public function productDelete(ProductEvent $event) : void
   {

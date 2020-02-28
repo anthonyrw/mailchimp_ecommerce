@@ -19,10 +19,14 @@ class CartQueue extends QueueWorkerBase
   private $order_item_id;
 
   /**
+   * Process the changes made to a cart
+   *
    * @param mixed $data
    *   The data that was passed to
    *   \Drupal\Core\Queue\QueueInterface::createItem() when the item was queued.
    *    This is an array containing the order id, email, event type, and order item id
+   *
+   * {@inheritDoc}
    */
   final public function processItem($data) : void
   {
@@ -47,6 +51,9 @@ class CartQueue extends QueueWorkerBase
     }
   }
 
+  /**
+   * Remove an order item from a cart in Mailchimp
+   */
   private function cartOrderItemRemove(): void
   {
     try {
@@ -56,6 +63,9 @@ class CartQueue extends QueueWorkerBase
     }
   }
 
+  /**
+   * Update an order item belonging to a cart in Mailchimp
+   */
   private function cartOrderItemUpdate(): void
   {
     try {
@@ -68,8 +78,9 @@ class CartQueue extends QueueWorkerBase
     }
   }
 
-
-
+  /**
+   * Delete a cart in Mailchimp
+   */
   private function cartEmpty() : void {
     try {
       $this->cart_handler->deleteCart($this->order_id);
