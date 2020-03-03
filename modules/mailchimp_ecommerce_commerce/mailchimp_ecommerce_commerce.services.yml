@@ -15,7 +15,7 @@ services:
       - { name: event_subscriber }
 
   mailchimp_ecommerce_commerce.product_event_subscriber:
-    arguments: ['@mailchimp_ecommerce.product_handler']
+    class: '\Drupal\mailchimp_ecommerce_commerce\EventSubscriber\ProductEventSubscriber'
     tags:
       - { name: event_subscriber }
 
