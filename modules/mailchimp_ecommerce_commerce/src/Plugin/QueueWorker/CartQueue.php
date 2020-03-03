@@ -36,17 +36,17 @@ class CartQueue extends QueueWorkerBase
     $this->order_item_id = $data['order_item_id'];
 
     if ($this->order_item_id !== null) {
-      if($this->event === 'CartOrderItemRemoveEvent') {
+      if($this->event === 'Drupal\commerce_cart\Event\CartOrderItemRemoveEvent') {
         $this->cartOrderItemRemove();
       }
-      else if($this->event === 'CartOrderItemUpdateEvent') {
+      else if($this->event === 'Drupal\commerce_cart\Event\CartOrderItemUpdateEvent') {
         $this->cartOrderItemUpdate();
       }
     }
-    else if($this->event === 'CartEmptyEvent') {
+    else if($this->event === 'Drupal\commerce_cart\Event\CartEmptyEvent') {
       $this->cartEmpty();
     }
-    else if($this->event === 'CartEntityAddEvent') {
+    else if($this->event === 'Drupal\commerce_cart\Event\CartEntityAddEvent') {
       $this->cartUpdated();
     }
   }
@@ -59,7 +59,12 @@ class CartQueue extends QueueWorkerBase
     try {
       $this->cart_handler->deleteCartLine($this->order_id, $this->order_item_id);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to remove cart order item from mailchimp. Order ID: ' . $this->order_id);
+      if ($e->getCode() === 404) {
+        $this->cartUpdated();
+      }
+      else {
+        mailchimp_ecommerce_log_error_message($e->getCode() . '. Unable to remove cart order item from mailchimp. Order ID: ' . $this->order_id);
+      }
     }
   }
 
@@ -74,7 +79,12 @@ class CartQueue extends QueueWorkerBase
       $product = $this->order_handler->buildProduct($order_item);
       $this->cart_handler->updateCartLine($this->order_id, $this->order_item_id, $product);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Unable to update cart order item from mailchimp. Order ID: ' . $this->order_id);
+      if ($e->getCode() === 404) {
+        $this->cartUpdated();
+      }
+      else {
+        mailchimp_ecommerce_log_error_message($e->getCode() . '. Unable to update cart order item from mailchimp. Order ID: ' . $this->order_id);
+      }
     }
   }
 

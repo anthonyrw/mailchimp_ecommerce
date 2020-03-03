@@ -64,7 +64,7 @@ class OrderQueue extends QueueWorkerBase {
       $this->cart_handler->deleteCart($this->order_id);
     }
     catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('There was an error on Delete Cart from Mailchimp for order # ' . $this->order_id);
+      mailchimp_ecommerce_log_error_message('There was an error in deleteCart from Mailchimp for order # ' . $this->order_id);
     }
 
     // Email address should always be available on checkout completion.
@@ -78,14 +78,14 @@ class OrderQueue extends QueueWorkerBase {
       // Update the customer's total order count and total amount spent.
       $this->customer_handler->incrementCustomerOrderTotal($customer['email_address'], $order_data['order_total']);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('There was an error on Increment Cust Order Total from Mailchimp for order # ' . $this->order_id);
+      mailchimp_ecommerce_log_error_message('There was an error on incrementCustomerOrderTotal from Mailchimp for order # ' . $this->order_id);
     }
 
     try {
       // Add the order to Mailchimp for the first time
       $this->order_handler->addOrder($this->order_id, $customer, $order_data);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('There was an error on the Add Order to Mailchimp call for order # ' . $this->order_id);
+      mailchimp_ecommerce_log_error_message('There was an error in addOrder to Mailchimp call for order # ' . $this->order_id);
     }
 
     // if a promo was used, update it now

@@ -27,7 +27,7 @@ class CartEventSubscriber implements EventSubscriberInterface {
       $data = [
         'order_id' => $cart->id(),
         'email' => $cart->getEmail(),
-        'event' => gettype($event),
+        'event' => get_class($event),
         'order_item_id' => null,
       ];
 
