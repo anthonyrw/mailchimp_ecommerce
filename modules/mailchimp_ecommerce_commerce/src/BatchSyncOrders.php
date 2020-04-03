@@ -52,11 +52,11 @@ class BatchSyncOrders {
         $customer_handler->addOrUpdateCustomer($customer);
       }
 
-      $order_data = $order_handler->buildOrder($order, $customer);
-
       if($order_state == 'draft' && empty($order->getItems())){
         return;
       }
+
+      $order_data = $order_handler->buildOrder($order, $customer);
 
       // Add cart item price to order data.
       if (!isset($order_data['currency_code'])) {

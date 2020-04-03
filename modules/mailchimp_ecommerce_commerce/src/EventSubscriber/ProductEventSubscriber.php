@@ -2,88 +2,69 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
-use Drupal\commerce_product\Entity\Product;
-use Drupal\commerce_product\Entity\ProductVariation;
+use Drupal;
 use Drupal\commerce_product\Event\ProductEvent;
 use Drupal\commerce_product\Event\ProductEvents;
-use Drupal\mailchimp_ecommerce\ProductHandler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Event Subscriber for Commerce Products.
  */
 class ProductEventSubscriber implements EventSubscriberInterface {
-
-  /**
-   * The Product Handler.
-   *
-   * @var \Drupal\mailchimp_ecommerce\ProductHandler
-   */
-  private $product_handler;
-
-  /**
-   * ProductEventSubscriber constructor.
-   *
-   * @param \Drupal\mailchimp_ecommerce\ProductHandler $product_handler
-   *   The Product Handler.
-   */
-  public function __construct(ProductHandler $product_handler) {
-    $this->product_handler = $product_handler;
-  }
-
   /**
    * Respond to event fired after saving a new product.
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
-  public function productInsert(ProductEvent $event) {
-    /** @var Product $product */
-    $product = $event->getProduct();
-
-    $product_id = $product->get('product_id')->value;
-    $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    // TODO Fix Type
-    $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
-
-    $variants = $this->product_handler->buildProductVariants($product);
-    $url = $this->product_handler->buildProductUrl($product);
-    $image_url = $this->product_handler->getProductImageUrl($product);
-    $description = $this->product_handler->getProductDescription($product);
-
-    $this->product_handler->addProduct($product_id, $title, $url, $image_url, $description, $type, $variants);
+  public function productInsert(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductInsertEvent'
+    ];
+    $queue->createItem($data);
   }
 
   /**
    * Respond to event fired after updating an existing product.
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
-  public function productUpdate(ProductEvent $event) {
-    $product = $event->getProduct();
-
-    $title = (!empty($product->get('title')->value)) ? $product->get('title')->value : '';
-    // TODO Fix Type
-    $type = (!empty($product->get('type')->value)) ? $product->get('type')->value : '';
-
-    $variants = $this->product_handler->buildProductVariants($product);
-    $url = $this->product_handler->buildProductUrl($product);
-    $image_url = $this->product_handler->getProductImageUrl($product);
-    $description = $this->product_handler->getProductDescription($product);
-
-    // Update the existing product and variant.
-    $this->product_handler->updateProduct($product, $title, $url, $image_url, $description, $type, $variants);
+  public function productUpdate(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductUpdateEvent'
+    ];
+    $queue->createItem($data);
 
   }
 
   /**
    * Respond to event fired after deleting a product.
+   *
+   * @param \Drupal\commerce_product\Event\ProductEvent $event
    */
-  public function productDelete(ProductEvent $event) {
-    $product = $event->getProduct();
-    $product_id = $product->get('product_id')->value;
-    $this->product_handler->deleteProduct($product_id);
+  public function productDelete(ProductEvent $event) : void
+  {
+    /** @var \Drupal\mailchimp_ecommerce_commerce\Plugin\QueueWorker\ProductQueue $queue */
+    $queue = Drupal::queue('mailchimp_ecommerce_commerce_product_queue');
+    $data = [
+      'product_id' => $event->getProduct()->id(),
+      'event' => 'ProductDeleteEvent'
+    ];
+    $queue->createItem($data);
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : array
+  {
     $events[ProductEvents::PRODUCT_INSERT][] = ['productInsert'];
     $events[ProductEvents::PRODUCT_UPDATE][] = ['productUpdate'];
     $events[ProductEvents::PRODUCT_DELETE][] = ['productDelete'];

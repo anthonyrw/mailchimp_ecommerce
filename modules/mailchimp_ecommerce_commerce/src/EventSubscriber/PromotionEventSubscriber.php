@@ -2,7 +2,6 @@
 
 namespace Drupal\mailchimp_ecommerce_commerce\EventSubscriber;
 
-use Drupal\commerce_promotion\Entity\Coupon;
 use Drupal\commerce_promotion\Entity\Promotion;
 use Drupal\commerce_promotion\Event\PromotionEvent;
 use Drupal\commerce_promotion\Event\PromotionEvents;
@@ -45,6 +44,7 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
 
   /**
    * Respond to event fired after updating a promotion.
+   * @param PromotionEvent $event
    */
   public function promoRuleUpdate(PromotionEvent $event) {
     /** @var Promotion $promotion */
@@ -53,7 +53,7 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
     try {
       $this->promo_handler->updatePromoRule($promo_rule);
     } catch (\Exception $e) {
-      mailchimp_ecommerce_log_error_message('Could not update promo rule: ' . $promotion->getCode());
+      mailchimp_ecommerce_log_error_message('Could not update promo rule: ' . $promotion->id());
     }
   }
 
@@ -92,7 +92,8 @@ class PromotionEventSubscriber implements EventSubscriberInterface {
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents() {
+  public static function getSubscribedEvents() : array
+  {
     $events[PromotionEvents::PROMOTION_INSERT][] = ['promoRuleInsert'];
     $events[PromotionEvents::PROMOTION_UPDATE][] = ['promoRuleUpdate'];
     $events[PromotionEvents::PROMOTION_DELETE][] = ['promoRuleDelete'];
